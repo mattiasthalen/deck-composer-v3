@@ -19,6 +19,7 @@ from typing import Any
 from deck_composer.errors import ToolError
 from deck_composer.facts import CardFacts, OwnedCard
 from deck_composer.manabox import Deck, Entry
+from deck_composer.rules import Category, Rules, Targets, searchable
 
 DECK_SIZE = 100
 LAND_FLOOR = 35
@@ -73,6 +74,8 @@ class TableReport:
     metrics: dict[str, Any]
     export_sha256: str
     refreshed: str | None
+    rules: Rules
+    targets: Targets
 
     @property
     def passed(self) -> bool:
@@ -84,6 +87,9 @@ class TableReport:
             "snapshot": {
                 "export_sha256": self.export_sha256,
                 "card_facts_refreshed": self.refreshed,
+                "rules_version": self.rules.version,
+                "rules_hash": self.rules.content_hash,
+                "targets_version": self.targets.version,
             },
             "passed": self.passed,
             "decks": [deck.to_dict() for deck in self.decks],
@@ -158,8 +164,16 @@ def _text_blob(card: OwnedCard) -> str:
     return "\n".join(parts)
 
 
-def tribal_core(facts: CardFacts, tribe: str, identity: Iterable[str]) -> dict[str, int]:
-    """Two numbers, never one: the type line is an oracle fact, a text mention is soft."""
+def tribal_core(
+    facts: CardFacts, tribe: str, identity: Iterable[str], *, excluding: str = ""
+) -> dict[str, int]:
+    """Two numbers, never one: the type line is an oracle fact, a text mention is soft.
+
+    The commander does not count toward its own tribal core. The number answers
+    how tribal the 99 can be, and the commander is not one of the 99; counting it
+    adds a constant 1 to every candidate, which carries no comparative
+    information while inflating what is actually buildable.
+    """
     allowed = set(identity)
     plural = PLURALS.get(tribe, tribe + "s")
     line = re.compile(rf"\b{re.escape(tribe)}\b")
@@ -168,6 +182,8 @@ def tribal_core(facts: CardFacts, tribe: str, identity: Iterable[str]) -> dict[s
     text = 0
     for entry in facts.cards:
         if not entry.owned or entry.card.legality != "legal":
+            continue
+        if entry.card.name == excluding:
             continue
         if not set(entry.card.color_identity) <= allowed:
             continue
@@ -179,6 +195,28 @@ def tribal_core(facts: CardFacts, tribe: str, identity: Iterable[str]) -> dict[s
 
 
 # --- the check --------------------------------------------------------------
+
+
+def in_category(category: Category, card: OwnedCard) -> bool:
+    text = searchable(card.card.type_line, card.card.oracle_text, card.card.faces)
+    return category.matches(card.card.name, text, type_line=card.card.type_line)
+
+
+def ceiling(facts: CardFacts, category: Category, identity: Iterable[str]) -> int:
+    """The most the owned collection could supply to a deck of this colour identity.
+
+    Colour identity alone. Cross-deck contention is reported separately, because a
+    ceiling that moved with build order could not be reasoned about (ADR-0010).
+    """
+    allowed = set(identity)
+    return sum(
+        entry.owned
+        for entry in facts.cards
+        if entry.owned
+        and entry.card.legality == "legal"
+        and set(entry.card.color_identity) <= allowed
+        and in_category(category, entry)
+    )
 
 
 @dataclass
@@ -193,15 +231,18 @@ class _Built:
         return tuple(c for c in COLOR_ORDER if c in union)
 
 
-def check(decks: Sequence[Deck], facts: CardFacts) -> TableReport:
+def check(decks: Sequence[Deck], facts: CardFacts, rules: Rules, targets: Targets) -> TableReport:
     built = [_build(deck, facts) for deck in decks]
-    reports = tuple(_deck_report(entry) for entry in built)
+    ceilings: dict[tuple[str, tuple[str, ...]], int] = {}
+    reports = tuple(_deck_report(entry, facts, rules, targets, ceilings) for entry in built)
     return TableReport(
         decks=reports,
         violations=tuple(_table_violations(built, facts)),
-        metrics=_table_metrics(built, facts),
+        metrics=_table_metrics(built, facts, reports),
         export_sha256=facts.export_sha256,
         refreshed=facts.refreshed,
+        rules=rules,
+        targets=targets,
     )
 
 
@@ -215,18 +256,24 @@ def _build(deck: Deck, facts: CardFacts) -> _Built:
     return built
 
 
-def _deck_report(built: _Built) -> DeckReport:
+def _deck_report(
+    built: _Built,
+    facts: CardFacts,
+    rules: Rules,
+    targets: Targets,
+    ceilings: dict[tuple[str, tuple[str, ...]], int],
+) -> DeckReport:
     return DeckReport(
         name=built.deck.name,
         path=built.deck.path,
         commander=tuple(entry.card.name for entry in built.commander),
         color_identity=built.identity,
-        violations=tuple(_deck_violations(built)),
-        metrics=_deck_metrics(built),
+        violations=tuple(_deck_violations(built, rules)),
+        metrics=_deck_metrics(built, facts, rules, targets, ceilings),
     )
 
 
-def _deck_violations(built: _Built) -> list[Violation]:
+def _deck_violations(built: _Built, rules: Rules) -> list[Violation]:
     found: list[Violation] = []
     deck = built.deck
     identity = set(built.identity)
@@ -279,13 +326,26 @@ def _deck_violations(built: _Built) -> list[Violation]:
                 Violation("game_changer", {"card": card.card.name, "cap": GAME_CHANGER_CAP})
             )
 
+    # Bracket 2 caps these at zero. Detection is patterns over oracle data, never
+    # a label the composer applied (ADR-0002, ADR-0009).
+    for category in rules.violations:
+        for _entry, card in built.cards:
+            if in_category(category, card):
+                found.append(Violation(category.name, {"card": card.card.name, "cap": 0}))
+
     lands = sum(entry.quantity for entry, card in built.cards if is_land(card))
     if lands < LAND_FLOOR:
         found.append(Violation("land_floor", {"lands": lands, "floor": LAND_FLOOR}))
     return found
 
 
-def _deck_metrics(built: _Built) -> dict[str, Any]:
+def _deck_metrics(
+    built: _Built,
+    facts: CardFacts,
+    rules: Rules,
+    targets: Targets,
+    ceilings: dict[tuple[str, tuple[str, ...]], int],
+) -> dict[str, Any]:
     lands = [(e, c) for e, c in built.cards if is_land(c)]
     nonland = [(e, c) for e, c in built.cards if not is_land(c)]
     creatures = sum(e.quantity for e, c in built.cards if is_creature(c))
@@ -308,9 +368,23 @@ def _deck_metrics(built: _Built) -> dict[str, Any]:
         for tribe in subtypes(entry.card.type_line):
             tribes[tribe] = _core_in_deck(built, tribe)
 
+    categories: dict[str, Any] = {}
+    for category in rules.metrics:
+        key = (category.name, built.identity)
+        if key not in ceilings:
+            ceilings[key] = ceiling(facts, category, built.identity)
+        categories[category.name] = _with_context(
+            sum(e.quantity for e, c in built.cards if in_category(category, c)),
+            targets.of(category.name),
+            ceilings[key],
+        )
+
+    lands_total = sum(e.quantity for e, _ in lands)
+    average = round(total_mv / count, 2) if count else 0
     return {
         "size": built.deck.size,
-        "lands": sum(e.quantity for e, _ in lands),
+        "lands": lands_total,
+        "lands_target": _target_only(targets.of("lands")),
         "basics": {
             card.card.name: entry.quantity
             for entry, card in sorted(lands, key=lambda p: p[1].card.name)
@@ -318,7 +392,9 @@ def _deck_metrics(built: _Built) -> dict[str, Any]:
         },
         "nonbasic_lands": sum(e.quantity for e, c in lands if not is_basic(c)),
         "creatures": creatures,
-        "average_mana_value": round(total_mv / count, 2) if count else 0,
+        "average_mana_value": average,
+        "average_mana_value_target": _target_only(targets.of("average_mana_value")),
+        "categories": categories,
         "curve": {key: curve[key] for key in sorted(curve, key=_curve_order)},
         "color_sources": {c: sources[c] for c in COLOR_ORDER if c in sources},
         "tribal_core": tribes,
@@ -326,18 +402,41 @@ def _deck_metrics(built: _Built) -> dict[str, Any]:
     }
 
 
+def _with_context(count: int, target: dict[str, float] | None, limit: int) -> dict[str, Any]:
+    """`ramp 2 (target 10, ceiling 2)` — a build failure and a collection fact differ.
+
+    A target the collection structurally cannot meet is still reported: with the
+    ceiling beside it the number says the collection is short, which is actionable.
+    """
+    body: dict[str, Any] = {"count": count, "ceiling": limit}
+    if target:
+        body["target"] = _target_only(target)
+    return body
+
+
+def _target_only(target: dict[str, float] | None) -> Any:
+    if not target:
+        return None
+    if "max" in target and "min" in target:
+        return [target["min"], target["max"]]
+    return target.get("min", target.get("max"))
+
+
 def _curve_order(bucket: str) -> int:
     return 99 if bucket == "7+" else int(bucket)
 
 
 def _core_in_deck(built: _Built, tribe: str) -> dict[str, int]:
-    """The tribe's presence in this deck. Both numbers, derived, never a builder tag."""
+    """The tribe's presence in the 99. The commander is excluded from its own core."""
     plural = PLURALS.get(tribe, tribe + "s")
     line = re.compile(rf"\b{re.escape(tribe)}\b")
     mention = re.compile(rf"\b({re.escape(tribe)}|{re.escape(plural)})\b")
     type_line = 0
     text = 0
+    commanders = {entry.card.name for entry in built.commander}
     for entry, card in built.cards:
+        if card.card.name in commanders:
+            continue
         if line.search(card.card.type_line):
             type_line += entry.quantity
         elif mention.search(_text_blob(card)):
@@ -362,7 +461,9 @@ def _table_violations(built: Sequence[_Built], facts: CardFacts) -> list[Violati
     return found
 
 
-def _table_metrics(built: Sequence[_Built], facts: CardFacts) -> dict[str, Any]:
+def _table_metrics(
+    built: Sequence[_Built], facts: CardFacts, reports: Sequence[DeckReport]
+) -> dict[str, Any]:
     basics: dict[str, dict[str, int]] = {}
     for entry in facts.cards:
         if is_basic(entry) and entry.owned:
@@ -376,29 +477,44 @@ def _table_metrics(built: Sequence[_Built], facts: CardFacts) -> dict[str, Any]:
     return {
         "decks": len(built),
         "basic_budget": {name: basics[name] for name in sorted(basics)},
-        "spread": _spread(built),
+        "spread": _spread(reports),
     }
 
 
-def _spread(built: Sequence[_Built]) -> dict[str, Any]:
-    """The raw spread across the four decks. The band that judges it is not yet decided."""
-    metrics = [_deck_metrics(deck) for deck in built]
-    out: dict[str, Any] = {}
-    for key in ("lands", "creatures", "average_mana_value"):
-        values = [m[key] for m in metrics]
-        out[key] = {
+def _spread(reports: Sequence[DeckReport]) -> dict[str, Any]:
+    """The spread across the four decks, on four axes, with no threshold on any.
+
+    A band calibrated from gen 1's decks would have been invention wearing
+    calibration's clothes, so there is none (ADR-0010). The table review is
+    required to state these four numbers; that is what stops an unthresholded
+    number going unread.
+    """
+
+    def axis(values: list[float]) -> dict[str, Any]:
+        return {
             "values": values,
             "min": min(values, default=0),
             "max": max(values, default=0),
             "spread": round(max(values, default=0) - min(values, default=0), 2),
         }
-    return out
+
+    metrics = [report.metrics for report in reports]
+    interaction = [
+        m.get("categories", {}).get("targeted_interaction", {}).get("count", 0) for m in metrics
+    ]
+    return {
+        "note": "no threshold; the table review states these (ADR-0010)",
+        "lands": axis([m["lands"] for m in metrics]),
+        "average_mana_value": axis([m["average_mana_value"] for m in metrics]),
+        "creatures": axis([m["creatures"] for m in metrics]),
+        "targeted_interaction": axis(interaction),
+    }
 
 
 # --- the checkpoint ---------------------------------------------------------
 
 
-def checkpoint(facts: CardFacts, names: Sequence[str]) -> dict[str, Any]:
+def checkpoint(facts: CardFacts, names: Sequence[str], rules: Rules) -> dict[str, Any]:
     """The table before any deck exists: what distinguishes a set of commanders.
 
     ADR-0008 needs tribal core and basic headroom computable from the card facts
@@ -415,8 +531,11 @@ def checkpoint(facts: CardFacts, names: Sequence[str]) -> dict[str, Any]:
                 "color_identity": list(identity),
                 "eligible": is_legendary_creature(entry),
                 "pool": _pool(facts, identity),
+                "ceilings": {
+                    category.name: ceiling(facts, category, identity) for category in rules.metrics
+                },
                 "tribal_core": {
-                    tribe: tribal_core(facts, tribe, identity)
+                    tribe: tribal_core(facts, tribe, identity, excluding=entry.card.name)
                     for tribe in subtypes(entry.card.type_line)
                 },
             }

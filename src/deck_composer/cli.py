@@ -23,9 +23,12 @@ from typing import Any
 from deck_composer import check as check_module
 from deck_composer import facts as facts_module
 from deck_composer import manabox, scryfall
+from deck_composer import rules as rules_module
 from deck_composer.errors import ToolError
 
 CARD_FACTS = Path("data/card_facts.json")
+CATEGORIES = Path("data/categories.json")
+TARGETS = Path("data/targets.json")
 
 
 def project_root(start: Path | None = None) -> Path:
@@ -83,6 +86,10 @@ def build_parser() -> argparse.ArgumentParser:
         "checkpoint; repeatable",
     )
     check.add_argument("--facts", type=Path, default=None, help="card facts path")
+    check.add_argument(
+        "--categories", type=Path, default=None, help="bracket category patterns path"
+    )
+    check.add_argument("--targets", type=Path, default=None, help="house metric targets path")
     check.set_defaults(handler=_check, usage_parser=check)
     return parser
 
@@ -105,10 +112,14 @@ def _check(args: argparse.Namespace, root: Path) -> dict[str, Any]:
         args.usage_parser.error("give either deck files or --commander names, not both or neither")
     path = args.facts or root / CARD_FACTS
     card_facts = facts_module.read(path, display=_display(path, root))
+    categories = args.categories or root / CATEGORIES
+    rules = rules_module.read_rules(categories, display=_display(categories, root))
     if args.commander:
-        return check_module.checkpoint(card_facts, args.commander)
+        return check_module.checkpoint(card_facts, args.commander, rules)
+    targets_path = args.targets or root / TARGETS
+    targets = rules_module.read_targets(targets_path, display=_display(targets_path, root))
     decks = [manabox.read_deck(deck, display=_display(deck, root)) for deck in args.decks]
-    return check_module.check(decks, card_facts).to_dict()
+    return check_module.check(decks, card_facts, rules, targets).to_dict()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

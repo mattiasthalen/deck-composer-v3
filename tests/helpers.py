@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,16 @@ FIXTURES = Path(__file__).parent / "fixtures"
 EXPORT = FIXTURES / "collection.csv"
 SCRYFALL = FIXTURES / "scryfall" / "collection.json"
 GOLDEN = FIXTURES / "golden"
+
+
+KNOWN_POSITIVE: list[dict[str, Any]] = json.loads(
+    (FIXTURES / "scryfall" / "known_positive.json").read_text(encoding="utf-8")
+)
+
+
+def regenerating() -> bool:
+    """A golden is regenerated only by explicit request, never on failure (ADR-0009)."""
+    return os.environ.get("DECK_COMPOSER_REGENERATE_GOLDEN") == "1"
 
 
 def cached_objects() -> list[dict[str, Any]]:

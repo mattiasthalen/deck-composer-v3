@@ -39,6 +39,12 @@ basic budget are properties of the table and are not computable from one list.
 - A field the design has not settled is **absent** from the output — never null
   and never a guessed default. A null invites a zero; an absent field cannot be
   cited by a playbook. This is a corollary of ADR-0002 and ADR-0006.
+- Every metric reports its **ceiling beside its target** (ADR-0010):
+  `ramp 2 (target 10, ceiling 11)` tells a build choice from a collection wall.
+  The ceiling comes from colour identity alone; contention is reported apart.
+- **Balance has no threshold.** `check` reports the spread across the four decks
+  on land count, average mana value, creature count and interaction count, and
+  judges none of them. The table review is required to state all four.
 
 ## The independence rule (ADR-0002)
 
@@ -61,6 +67,8 @@ first.
 |---|---|---|
 | `exports/` | ManaBox exports (carry prices) | never |
 | `data/card_facts.json` | the **card facts**: the Scryfall projection plus ownership | yes |
+| `data/categories.json` | bracket category patterns; WotC's data, with the document and date | yes |
+| `data/targets.json` | house metric targets; ours, and on a different authority | yes |
 | `decks/*.deck.txt` | the **deck files**: ManaBox decklists, schema in a comment | yes |
 | `tests/fixtures/` | rows cut from the real export, prices blanked; goldens | yes |
 
@@ -74,6 +82,7 @@ value, and is **regenerated rather than migrated** (ADR-0007). No migration code
 | `manabox.py` | Both ManaBox formats: the CSV export and the decklist |
 | `scryfall.py` | The API surface and the projection from an object to a record |
 | `facts.py` | `data/card_facts.json` and the `refresh` operation |
+| `rules.py` | `data/categories.json` and `data/targets.json`: patterns, corrections, matching |
 | `check.py` | The rules and the measurements |
 | `cli.py` | Argument parsing, JSON rendering, exit codes, project root |
 
@@ -101,8 +110,22 @@ Never commit an export. Never put a non-empty price in a fixture. Cached Scryfal
 responses are scrubbed of the keys the projection does not carry, and a test
 enforces that no price, image or purchase key reaches the committed file.
 
-`tests/fixtures/golden/card_facts.json` locks the file layout byte-for-byte; a
-deliberate layout change regenerates it, nothing else does.
+`tests/fixtures/golden/card_facts.json` locks the file layout byte-for-byte and
+`tests/fixtures/golden/categories.json` locks category membership over the owned
+pool. Both regenerate **only** on explicit request:
+
+```sh
+DECK_COMPOSER_REGENERATE_GOLDEN=1 uv run pytest
+```
+
+Nothing regenerates a golden automatically on failure. Regeneration is what puts
+the diff in front of a human, and it stops working the moment it is automatic
+(ADR-0009).
+
+`tests/fixtures/scryfall/known_positive.json` holds cards the owned pool cannot
+exercise — Time Warp, Armageddon, Ruination and friends. Extra turns and mass
+land denial have zero owned examples, so without this fixture both violation
+patterns would be untested assertions.
 
 ## Vocabulary
 

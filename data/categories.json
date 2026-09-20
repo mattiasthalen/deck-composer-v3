@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "format": "commander",
+  "version": "2026-09-20",
+  "source": {
+    "document": "Commander Brackets Beta Update",
+    "publisher": "Wizards of the Coast",
+    "read": "2026-09-20",
+    "note": "Bracket 2 caps Game Changers, extra-turn cards and mass land denial at zero. The Game Changer cap reads Scryfall's game_changer flag directly and needs no pattern."
+  },
+  "categories": {
+    "extra_turns": {
+      "kind": "violation",
+      "patterns": [
+        "\\btakes? (?:an|one|two|three|another) extra turns?\\b",
+        "\\bextra turn after this one\\b",
+        "\\btakes? that many extra turns\\b"
+      ],
+      "not_patterns": [],
+      "include": [],
+      "exclude": [],
+      "types_excluded": []
+    },
+    "mass_land_denial": {
+      "kind": "violation",
+      "patterns": [
+        "\\bdestroy all (?:nonbasic )?lands?\\b",
+        "\\bexile all (?:nonbasic )?lands?\\b",
+        "\\bdestroy all (?!creature|artifact|enchantment)[a-z ]{0,30}lands\\b",
+        "\\beach player sacrifices (?:a|all|[a-z]+) lands?\\b",
+        "\\bsacrifices? all (?:the )?lands\\b"
+      ],
+      "not_patterns": [
+        "\\bdestroy target land\\b"
+      ],
+      "include": [],
+      "exclude": [],
+      "types_excluded": []
+    },
+    "ramp": {
+      "kind": "metric",
+      "patterns": [
+        "\\bsearch your library for (?:a|up to [a-z]+|[a-z]+) [^.]{0,60}?lands? card",
+        "\\bput (?:it|that card|them|a land card|up to [a-z]+ [^.]{0,40}lands? cards?) onto the battlefield",
+        "\\byou may play an additional land\\b",
+        "\\badd (?:\\{[WUBRGC0-9X/]+\\}|one mana|two mana|[a-z]+ mana)"
+      ],
+      "not_patterns": [],
+      "include": [],
+      "exclude": [],
+      "types_excluded": [
+        "Land"
+      ]
+    },
+    "draw": {
+      "kind": "metric",
+      "patterns": [
+        "\\bdraws? (?:a|one|two|three|four|five|[0-9]+|that many|X) cards?\\b",
+        "\\bdraws? cards equal to\\b"
+      ],
+      "not_patterns": [],
+      "include": [],
+      "exclude": [],
+      "types_excluded": [
+        "Land"
+      ]
+    },
+    "targeted_interaction": {
+      "kind": "metric",
+      "patterns": [
+        "\\b(?:destroy|exile) target (?:creature|permanent|artifact|enchantment|planeswalker|battle|nonland)",
+        "\\bcounter target\\b",
+        "\\btarget creature gets [-−]",
+        "\\bdeals? [0-9X]+ damage to target (?:creature|permanent|planeswalker|any target)",
+        "\\btarget creature[^.]{0,40}gets [-−]",
+        "\\breturn target (?:creature|nonland permanent)[^.]{0,40}to (?:its|their) owner's hand"
+      ],
+      "not_patterns": [],
+      "include": [],
+      "exclude": [],
+      "types_excluded": [
+        "Land"
+      ]
+    },
+    "sweepers": {
+      "kind": "metric",
+      "patterns": [
+        "\\b(?:destroy|exile) all creatures\\b",
+        "\\ball creatures get [-−]",
+        "\\beach (?:player|opponent) sacrifices (?:a|all|[a-z]+) creatures?\\b",
+        "\\b(?:destroy|exile) all (?:other )?(?:nonland permanents|permanents)\\b"
+      ],
+      "not_patterns": [],
+      "include": [],
+      "exclude": [],
+      "types_excluded": [
+        "Land"
+      ]
+    }
+  }
+}
