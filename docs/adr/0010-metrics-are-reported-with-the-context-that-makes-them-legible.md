@@ -4,21 +4,21 @@
 
 ## Context
 
-Gen 1's build reported two different things in the same shape: shortfalls no build
-could have closed, and shortfalls a different build could have closed.
+Gen 1's build reported shortfalls against default targets in one shape, when they
+were three different things.
 
-Its white-black deck held 0 sweepers against a default target of 2. The owned pool
-contains exactly three sweepers and all three are red, so that target is
-unreachable in white-black and always will be.
+Its white-black deck held 0 sweepers against a target of 2. The owned pool holds
+exactly three sweepers and all three are red, so in white-black that target is
+unreachable and always will be.
 
-The same deck held 2 ramp against a target of 10, and on the page it looked
-identical. It was not the same thing: the owned white-black pool supplies
-materially more ramp than the deck used, so that shortfall was a build choice.
-Gen 1's review recorded that no mana rock exists in the owned Orzhov nonland pool,
-which is true and is a narrower claim than it appears — ramp is the broader
-category, and it was available.
+The same deck held 2 ramp against a target of 10. The owned white-black pool
+supplies more ramp than the deck took, but still fewer distinct cards than the
+target asks for — a shortfall that can be narrowed and never closed.
 
-Nothing in the report separated the two. A target that cannot be met is read once
+A blue-red deck at the same table held 0 sweepers where the pool offers several in
+those colours. That one was a build choice.
+
+Nothing in the report separated the three. A target that cannot be met is read once
 and then ignored, and the shortfalls that are build choices get ignored with it.
 
 Balance was decided as a metric rather than a gate. A band was proposed, calibrated
@@ -36,6 +36,12 @@ identity — the most the owned collection could supply. `ramp 2 (target 10, cei
 **The ceiling is computed from colour identity alone.** Cross-deck contention is
 reported separately rather than folded into the ceiling, because a ceiling that
 moves with build order cannot be reasoned about.
+
+**A ceiling counts distinct card names, not copies.** Singleton caps every nonbasic
+at one per deck, so four copies of a card supply one slot, not four. Counting copies
+inflates every ceiling and does it invisibly, since the inflated number is still
+plausible. This applies to every category; basics are the only cards whose ceiling
+is a copy count.
 
 **A target the collection structurally cannot meet is still reported.** Sweepers
 stay at a target of 2 against a pool holding one. With the ceiling beside it, the
