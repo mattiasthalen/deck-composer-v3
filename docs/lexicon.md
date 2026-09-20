@@ -16,7 +16,8 @@ Entries marked #1 come from the system design interview of 2026-09-20.
 | card facts | The committed Scryfall projection for every card the project has seen. Authoritative for what a card is. Gen 1 called this the Oracle and gen 2 the catalog; this project uses one name. | #1 |
 | violation | A hard-rule failure with a reason. Blocks artifacts. Reported as data, not as an error (ADR-0006). | #1 |
 | metric | A measurement with a reference target. Informs judgment, never blocks. | #1 |
-| tribal core | The cards relevant to a commander's creature type that its colour identity can actually field. Two numbers, never one: creatures matching the type line, and cards whose oracle text names the type. Roughly 15 to 19 in this collection, which is a core rather than a typal deck. | #1 |
+| tribal core | The cards relevant to a commander's creature type that its colour identity can actually field, **excluding the commander itself**, which is not one of the 99. Two numbers, never one: creatures matching the type line, and cards whose oracle text names the type. Roughly 15 to 19 in this collection, which is a core rather than a typal deck. | #1 |
 | basic budget | The table-level supply of basic lands, allocated across all four decks before any land base is fixed (ADR-0005). | #1 |
 | playbook | Per-deck piloting prose written for someone who has never seen the deck. Every number in it renders from measured output, so it cannot claim something `check` did not measure. | #1 |
 | table review | The one table-level document. Carries the judged half of balance — the cross-deck qualitative findings no check can compute. | #1 |
+| pool ceiling | The most of a category the owned collection could supply to one deck, computed from its commander's colour identity alone. Reported beside every metric target so a shortfall reads as a build failure or a collection fact (ADR-0010). | #1 |

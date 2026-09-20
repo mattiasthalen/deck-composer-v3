@@ -12,6 +12,8 @@ Michael Nygard's format. An ADR is superseded, never edited to change its decisi
 | [0006](0006-check-exits-zero-and-returns-violations-as-data.md) | `check` exits zero and returns violations as data | Accepted (2026-09-20) |
 | [0007](0007-committed-files-carry-an-integer-schema-and-are-regenerated-not-migrated.md) | Committed files carry an integer schema and are regenerated, never migrated | Accepted (2026-09-20) |
 | [0008](0008-the-owner-picks-the-commanders-at-a-checkpoint-before-building.md) | The owner picks the commanders at a checkpoint before any deck is built | Accepted (2026-09-20) |
+| [0009](0009-categories-are-detected-by-patterns-in-a-versioned-file-locked-by-a-golden.md) | Categories are detected by patterns in a versioned file, corrected by lists only where a miss is a violation, and locked by a golden | Accepted (2026-09-20) |
+| [0010](0010-metrics-are-reported-with-the-context-that-makes-them-legible.md) | Metrics are reported with the context that makes them legible | Accepted (2026-09-20) |
 
 ## Prior art in other repositories
 
