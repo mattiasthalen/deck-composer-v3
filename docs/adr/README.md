@@ -14,6 +14,8 @@ Michael Nygard's format. An ADR is superseded, never edited to change its decisi
 | [0008](0008-the-owner-picks-the-commanders-at-a-checkpoint-before-building.md) | The owner picks the commanders at a checkpoint before any deck is built | Accepted (2026-09-20) |
 | [0009](0009-categories-are-detected-by-patterns-in-a-versioned-file-locked-by-a-golden.md) | Categories are detected by patterns in a versioned file, corrected by lists only where a miss is a violation, and locked by a golden | Accepted (2026-09-20) |
 | [0010](0010-metrics-are-reported-with-the-context-that-makes-them-legible.md) | Metrics are reported with the context that makes them legible | Accepted (2026-09-20) |
+| [0011](0011-one-card-facts-file-carries-the-projection-and-ownership.md) | One card-facts file carries both the Scryfall projection and ownership | Accepted (2026-09-20) |
+| [0012](0012-the-manabox-decklist-is-the-deck-file.md) | The ManaBox decklist is the deck file | Accepted (2026-09-20) |
 
 ## Prior art in other repositories
 
