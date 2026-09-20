@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "version": "2026-09-20",
+  "source": "House taste, set in the system design interview of 2026-09-20. Not WotC's; this file and the bracket patterns change on different authorities (ADR-0009).",
+  "targets": {
+    "ramp": {"min": 10},
+    "draw": {"min": 10},
+    "targeted_interaction": {"min": 8},
+    "sweepers": {"min": 2},
+    "lands": {"min": 35, "max": 37},
+    "average_mana_value": {"min": 2.5, "max": 3.2}
+  }
+}

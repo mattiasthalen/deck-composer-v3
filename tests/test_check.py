@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from deck_composer import check as check_module
@@ -9,6 +13,7 @@ from deck_composer.check import LAND_FLOOR, checkpoint
 from deck_composer.errors import ToolError
 from deck_composer.facts import CardFacts
 from deck_composer.manabox import parse_deck
+from deck_composer.rules import read_rules, read_targets
 from tests.helpers import deck_text
 
 ZORALINE = "1 Zoraline, Cosmos Caller (BLB) 242"
@@ -22,8 +27,12 @@ def codes(report, deck: int = 0) -> list[str]:
     return [v.code for v in report.decks[deck].violations]
 
 
-def one(text: str, facts: CardFacts):
-    return check_module.check(table(text), facts)
+def one(text: str, facts: CardFacts, rules=None, targets=None):
+    return check_module.check(table(text), facts, rules or RULES, targets or TARGETS)
+
+
+RULES = read_rules(Path("data/categories.json"))
+TARGETS = read_targets(Path("data/targets.json"))
 
 
 # --- the regression -------------------------------------------------------
@@ -135,14 +144,14 @@ def test_an_unowned_maybeboard_name_is_not_resolved(card_facts: CardFacts) -> No
 def test_ownership_is_summed_across_the_whole_table(card_facts: CardFacts) -> None:
     """Six Moonrise Clerics are owned five; four decks each taking one is fine."""
     decks = [deck_text(f"d{n}", [ZORALINE], ["1 Moonrise Cleric"]) for n in range(4)]
-    report = check_module.check(table(*decks), card_facts)
+    report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     assert not [v for v in report.violations if v.code == "ownership"]
 
 
 def test_the_table_overdrawing_a_card_violates(card_facts: CardFacts) -> None:
     """Vengeful Bloodwitch is owned once; two decks cannot both play it."""
     decks = [deck_text(f"d{n}", [ZORALINE], ["1 Vengeful Bloodwitch"]) for n in range(2)]
-    report = check_module.check(table(*decks), card_facts)
+    report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     found = [v for v in report.violations if v.code == "ownership"]
     assert found and found[0].detail == {
         "card": "Vengeful Bloodwitch",
@@ -154,7 +163,7 @@ def test_the_table_overdrawing_a_card_violates(card_facts: CardFacts) -> None:
 def test_basics_are_owned_like_any_other_card(card_facts: CardFacts) -> None:
     """ADR-0005: no exemption. The export holds 14 Plains."""
     decks = [deck_text(f"d{n}", [ZORALINE], ["10 Plains"]) for n in range(2)]
-    report = check_module.check(table(*decks), card_facts)
+    report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     found = [v for v in report.violations if v.code == "ownership"]
     assert found and found[0].detail == {"card": "Plains", "used": 20, "owned": 14}
 
@@ -176,7 +185,7 @@ def test_a_token_printing_does_not_inflate_the_cards_ownership(card_facts: CardF
 
 def test_the_basic_budget_is_reported_at_the_table(card_facts: CardFacts) -> None:
     decks = [deck_text(f"d{n}", [ZORALINE], ["5 Plains"]) for n in range(2)]
-    report = check_module.check(table(*decks), card_facts)
+    report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     budget = report.metrics["basic_budget"]["Plains"]
     assert budget == {"owned": 14, "used": 10, "remaining": 4}
 
@@ -207,7 +216,7 @@ def test_metrics_measure_the_deck(card_facts: CardFacts) -> None:
 def test_the_spread_is_reported_without_a_verdict(card_facts: CardFacts) -> None:
     """The band that would judge this spread is not yet decided, so none is emitted."""
     decks = [deck_text("a", [ZORALINE], ["20 Plains"]), deck_text("b", [ZORALINE], ["10 Plains"])]
-    spread = check_module.check(table(*decks), card_facts).metrics["spread"]
+    spread = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics["spread"]
     assert spread["lands"] == {"values": [20, 10], "min": 10, "max": 20, "spread": 10}
     assert "verdict" not in spread and "band" not in spread
 
@@ -241,7 +250,7 @@ def test_a_face_name_resolves_to_its_card(card_facts: CardFacts) -> None:
 
 def test_the_checkpoint_computes_before_any_deck_exists(card_facts: CardFacts) -> None:
     """ADR-0008: tribal core and basic headroom from the card facts and a commander."""
-    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller", "Wick, the Whorled Mind"])
+    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller", "Wick, the Whorled Mind"], RULES)
     zoraline = view["commanders"][0]
     assert zoraline["color_identity"] == ["W", "B"]
     assert zoraline["eligible"] is True
@@ -251,6 +260,119 @@ def test_the_checkpoint_computes_before_any_deck_exists(card_facts: CardFacts) -
 
 
 def test_the_checkpoint_reports_the_snapshot(card_facts: CardFacts) -> None:
-    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"])
+    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES)
     assert view["snapshot"]["export_sha256"].startswith("sha256:")
     assert view["snapshot"]["card_facts_refreshed"] == "2026-09-20"
+
+
+# --- the commander does not count toward its own tribal core --------------
+
+
+def test_a_commander_is_excluded_from_its_own_tribal_core(card_facts: CardFacts) -> None:
+    """The number answers how tribal the 99 can be, and the commander is not one.
+
+    Zoraline is a Bat. Counting her would add a constant 1 to every candidate,
+    which carries no comparative information at the selection checkpoint.
+    """
+    identity = ("W", "B")
+    with_her = check_module.tribal_core(card_facts, "Bat", identity)
+    without = check_module.tribal_core(
+        card_facts, "Bat", identity, excluding="Zoraline, Cosmos Caller"
+    )
+    assert without["type_line"] == with_her["type_line"] - 1
+
+
+def test_the_checkpoint_excludes_each_commander_from_its_own_core(
+    card_facts: CardFacts,
+) -> None:
+    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES)
+    bats = view["commanders"][0]["tribal_core"]["Bat"]
+    plain = check_module.tribal_core(card_facts, "Bat", ("W", "B"))
+    assert bats["type_line"] == plain["type_line"] - 1
+
+
+def test_a_commander_in_the_deck_is_excluded_from_the_deck_core(
+    card_facts: CardFacts,
+) -> None:
+    text = deck_text("bats", [ZORALINE], ["1 Starscape Cleric"])
+    core = one(text, card_facts).decks[0].metrics["tribal_core"]["Bat"]
+    assert core["type_line"] == 1  # Starscape Cleric only, never Zoraline
+
+
+# --- bracket 2 violation categories ---------------------------------------
+
+
+def test_an_extra_turn_card_violates_at_bracket_two(card_facts: CardFacts) -> None:
+    """Detected by pattern over oracle data, never by a label the composer applied."""
+    from deck_composer.rules import read_rules
+
+    payload = json.loads(Path("data/categories.json").read_text(encoding="utf-8"))
+    payload["categories"]["extra_turns"]["include"] = ["Feed the Cycle"]
+    path = Path(tempfile.mkdtemp()) / "categories.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    report = one(deck_text("x", [ZORALINE], ["1 Feed the Cycle"]), card_facts, read_rules(path))
+    assert "extra_turns" in codes(report)
+
+
+def test_a_clean_deck_trips_no_category_violation(card_facts: CardFacts) -> None:
+    report = one(deck_text("x", [ZORALINE], ["18 Plains", "17 Swamp"]), card_facts)
+    assert "extra_turns" not in codes(report)
+    assert "mass_land_denial" not in codes(report)
+
+
+# --- ceilings beside targets ----------------------------------------------
+
+
+def test_a_metric_reports_its_target_and_its_ceiling(card_facts: CardFacts) -> None:
+    """`ramp 2 (target 10, ceiling 2)` tells a build failure from a collection fact."""
+    report = one(deck_text("x", [ZORALINE], ["18 Plains", "17 Swamp"]), card_facts)
+    ramp = report.decks[0].metrics["categories"]["ramp"]
+    assert set(ramp) == {"count", "target", "ceiling"}
+    assert ramp["target"] == 10
+    assert ramp["ceiling"] >= ramp["count"]
+
+
+def test_a_target_the_collection_cannot_meet_is_still_reported(
+    card_facts: CardFacts,
+) -> None:
+    """Sweepers stays at 2 against a pool holding fewer. The ceiling says why."""
+    report = one(deck_text("x", [ZORALINE], ["1 Plains"]), card_facts)
+    sweepers = report.decks[0].metrics["categories"]["sweepers"]
+    assert sweepers["target"] == 2
+    assert "ceiling" in sweepers
+
+
+def test_the_ceiling_comes_from_colour_identity_alone(card_facts: CardFacts) -> None:
+    """A ceiling that moved with build order could not be reasoned about."""
+    alone = one(deck_text("a", [ZORALINE], ["1 Plains"]), card_facts)
+    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Vengeful Bloodwitch"]) for n in range(3)]
+    crowded = check_module.check(table(*decks), card_facts, RULES, TARGETS)
+    assert (
+        alone.decks[0].metrics["categories"]["draw"]["ceiling"]
+        == crowded.decks[0].metrics["categories"]["draw"]["ceiling"]
+    )
+
+
+# --- balance is a spread with no threshold --------------------------------
+
+
+def test_the_spread_covers_four_axes_and_judges_none(card_facts: CardFacts) -> None:
+    decks = [deck_text("a", [ZORALINE], ["20 Plains"]), deck_text("b", [ZORALINE], ["10 Plains"])]
+    spread = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics["spread"]
+    assert set(spread) == {
+        "note",
+        "lands",
+        "average_mana_value",
+        "creatures",
+        "targeted_interaction",
+    }
+    for axis in ("lands", "average_mana_value", "creatures", "targeted_interaction"):
+        assert set(spread[axis]) == {"values", "min", "max", "spread"}
+        assert "verdict" not in spread[axis] and "passed" not in spread[axis]
+
+
+def test_the_report_names_the_rules_it_ran_under(card_facts: CardFacts) -> None:
+    report = one(deck_text("x", [ZORALINE], ["1 Plains"]), card_facts).to_dict()
+    assert report["snapshot"]["rules_version"]
+    assert report["snapshot"]["rules_hash"].startswith("sha256:")
+    assert report["snapshot"]["targets_version"]
