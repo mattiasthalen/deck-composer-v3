@@ -205,12 +205,16 @@ def in_category(category: Category, card: OwnedCard) -> bool:
 def ceiling(facts: CardFacts, category: Category, identity: Iterable[str]) -> int:
     """The most the owned collection could supply to a deck of this colour identity.
 
+    Distinct names, not copies: singleton caps every nonbasic at one per deck, so
+    owning four Fountainport Bells still supplies one ramp slot. These categories
+    exclude lands, where the basic exemption would matter.
+
     Colour identity alone. Cross-deck contention is reported separately, because a
     ceiling that moved with build order could not be reasoned about (ADR-0010).
     """
     allowed = set(identity)
     return sum(
-        entry.owned
+        1
         for entry in facts.cards
         if entry.owned
         and entry.card.legality == "legal"
