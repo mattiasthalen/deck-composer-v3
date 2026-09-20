@@ -274,7 +274,6 @@ def read_deck(path: Path, *, display: str | None = None) -> Deck:
 
 def parse_deck(text: str, *, path: str) -> Deck:
     schema: str | None = None
-    name: str | None = None
     section: str | None = None
     entries: dict[str, list[Entry]] = {s: [] for s in SECTIONS}
     problems: list[dict[str, object]] = []
@@ -290,12 +289,7 @@ def parse_deck(text: str, *, path: str) -> Deck:
             if (found := _SECTION_LINE.match(line)) is not None:
                 section = found.group(1).capitalize()
                 continue
-            # The first free comment names the deck; the rest are ignored.
-            if name is None and section is None:
-                candidate = line.lstrip("/").strip()
-                if candidate:
-                    name = candidate
-            continue
+            continue  # every other comment is ignored
         if section is None:
             problems.append({"line": number, "problem": "entry_before_section", "text": line})
             continue
@@ -335,7 +329,9 @@ def parse_deck(text: str, *, path: str) -> Deck:
 
     return Deck(
         path=path,
-        name=name or Path(path).stem,
+        # The name is the file's, never a comment: ADR-0012 admits only `schema`
+        # into a comment, and a deck named "Commander" would be read as a section.
+        name=Path(path).stem.removesuffix(".deck"),
         commander=tuple(entries[COMMANDER]),
         mainboard=tuple(entries[MAINBOARD]),
         maybeboard=tuple(entries[MAYBEBOARD]),
@@ -344,7 +340,7 @@ def parse_deck(text: str, *, path: str) -> Deck:
 
 def render_deck(deck: Deck) -> str:
     """Render a decklist ManaBox can import, schema first so a reader sees it."""
-    lines = [f"// schema: {SCHEMA}", f"// {deck.name}", ""]
+    lines = [f"// schema: {SCHEMA}", ""]
     for section, group in (
         (COMMANDER, deck.commander),
         (MAINBOARD, deck.mainboard),

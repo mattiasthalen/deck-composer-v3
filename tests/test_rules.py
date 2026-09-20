@@ -100,13 +100,28 @@ def test_the_violation_categories_are_empty_over_the_pool(rules) -> None:
         assert [e.card.name for e in owned if in_category(category, e)] == []
 
 
-def test_the_pool_holds_exactly_one_sweeper(rules) -> None:
-    """Gen 1's review found one real board sweeper collection-wide, by hand."""
+def test_the_pool_sweepers_are_the_three_known_ones(rules) -> None:
+    """By name, not by count: a bare count can agree with an unrelated error.
+
+    Every sweeper in this collection is worded as damage to each creature, and
+    all three are red — which is why a white-black deck's sweeper ceiling is
+    genuinely zero forever rather than a gap in the pattern.
+    """
     facts = read_facts(POOL)
     owned = [e for e in facts.cards if e.owned and e.card.legality == "legal"]
     sweepers = rules.category("sweepers")
     assert sweepers is not None
-    assert len([e for e in owned if in_category(sweepers, e)]) == 1
+    found = {e.card.name for e in owned if in_category(sweepers, e)}
+    assert found == {"Brotherhood's End", "Splatter Technique", "Wildfire Howl"}
+
+
+def test_a_type_restricted_wrath_is_not_a_sweeper(rules) -> None:
+    """Season of Gathering destroys all artifacts or all enchantments, never creatures."""
+    facts = read_facts(POOL)
+    season = facts.card("Season of Gathering")
+    sweepers = rules.category("sweepers")
+    assert season is not None and sweepers is not None
+    assert not in_category(sweepers, season)
 
 
 def test_a_land_is_never_ramp(rules) -> None:

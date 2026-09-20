@@ -87,8 +87,9 @@
       "patterns": [
         "\\b(?:destroy|exile) all creatures\\b",
         "\\ball creatures get [-−]",
+        "\\bdeals? [0-9X]+ damage to each creature\\b",
         "\\beach (?:player|opponent) sacrifices (?:a|all|[a-z]+) creatures?\\b",
-        "\\b(?:destroy|exile) all (?:other )?(?:nonland permanents|permanents)\\b"
+        "\\b(?:destroy|exile) all (?:other )?(?:nonland )?permanents\\b(?! of the chosen type)"
       ],
       "not_patterns": [],
       "include": [],

@@ -121,7 +121,7 @@ def urllib_transport(
 class Client:
     """One request at a time, spaced, with an identifying User-Agent."""
 
-    transport: Transport = urllib_transport
+    transport: Transport | None = None
     sleep: Callable[[float], None] = time.sleep
     version: str = "unknown"
     requests: int = field(default=0, init=False)
@@ -141,7 +141,11 @@ class Client:
             if self.requests:
                 self.sleep(SPACING)
             self.requests += 1
-            status, raw = self.transport(method, url, self._headers(body=bool(body)), body)
+            # Resolved per call, not bound at class definition, so the module
+            # attribute stays patchable and a test cannot reach the network by
+            # accident.
+            send = self.transport or urllib_transport
+            status, raw = send(method, url, self._headers(body=bool(body)), body)
             if status in RETRY_STATUSES and attempt + 1 < ATTEMPTS:
                 continue
             if status == 404:

@@ -120,17 +120,30 @@ def test_an_unparseable_line_is_a_contract_failure() -> None:
     assert caught.value.error == "deck_malformed"
 
 
-def test_free_comments_are_ignored_and_the_first_names_the_deck() -> None:
+def test_free_comments_are_ignored_and_the_name_is_the_file() -> None:
+    """ADR-0012 admits only `schema` into a comment, so the name is the filename."""
     text = "// schema: 1\n// my table deck\n// Mainboard\n1 Plains\n// a trailing note\n"
-    deck = parse_deck(text, path="d")
-    assert deck.name == "my table deck"
+    deck = parse_deck(text, path="wick-rats.deck.txt")
+    assert deck.name == "wick-rats"
     assert len(deck.mainboard) == 1
+
+
+def test_a_deck_named_like_a_section_is_not_swallowed() -> None:
+    """A name in a comment could be read as a section header; the filename cannot."""
+    deck = Deck(
+        path="Commander.deck.txt",
+        name="Commander",
+        commander=(Entry(1, "Zoraline, Cosmos Caller", "blb", "242"),),
+        mainboard=(Entry(15, "Plains"),),
+        maybeboard=(),
+    )
+    assert parse_deck(render_deck(deck), path="Commander.deck.txt") == deck
 
 
 def test_a_decklist_round_trips() -> None:
     deck = Deck(
-        path="d",
-        name="round trip",
+        path="round-trip.deck.txt",
+        name="round-trip",
         commander=(Entry(1, "Zoraline, Cosmos Caller", "blb", "242"),),
         mainboard=(Entry(15, "Plains"), Entry(1, "Uncharted Haven", "fdn", "564")),
         maybeboard=(Entry(1, "Sol Ring"),),
@@ -138,7 +151,7 @@ def test_a_decklist_round_trips() -> None:
     rendered = render_deck(deck)
     assert "1 Zoraline, Cosmos Caller (BLB) 242" in rendered
     assert "15 Plains" in rendered
-    assert parse_deck(rendered, path="d") == deck
+    assert parse_deck(rendered, path="round-trip.deck.txt") == deck
 
 
 def test_a_missing_deck_file_says_what_to_do(tmp_path: Path) -> None:

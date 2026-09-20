@@ -130,3 +130,19 @@ def test_there_are_exactly_two_verbs() -> None:
     assert verbs == {"refresh", "check"}, (
         "adding a verb supersedes ADR-0001; a new fact belongs in check's output"
     )
+
+
+def test_the_default_suite_never_reaches_the_network(monkeypatch, tmp_path, capsys) -> None:
+    """A test believed to be offline once opened a real connection to Scryfall."""
+    import socket
+
+    from tests.helpers import FakeScryfall
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("the default suite must not open a socket")
+
+    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr("deck_composer.scryfall.urllib_transport", FakeScryfall(), raising=True)
+    monkeypatch.setattr("time.sleep", lambda _: None)
+    code, _out, _err = run(["refresh", str(EXPORT), "--out", str(tmp_path / "f.json")], capsys)
+    assert code == 0

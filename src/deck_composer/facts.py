@@ -181,7 +181,9 @@ def refresh(
 ) -> RefreshResult:
     """Recompute ownership offline, fetch what is missing, write the card facts."""
     shown = display or facts_path.name
-    previous = read(facts_path) if facts_path.exists() else None
+    # ADR-0007 handles a schema change by regenerating. refresh is the operation
+    # that regenerates, so it must not fail on the file it is about to replace.
+    previous = _previous(facts_path)
     base = previous or empty(export)
 
     wanted = {lot.scryfall_id for lot in export.lots}
@@ -228,6 +230,15 @@ def refresh(
         unresolved=unresolved,
         changes=changes,
     )
+
+
+def _previous(path: Path) -> CardFacts | None:
+    if not path.exists():
+        return None
+    try:
+        return read(path)
+    except ToolError:
+        return None  # unreadable or a foreign schema: rebuild it
 
 
 def _record(entry: OwnedCard | OwnedToken) -> Card | Token:
