@@ -4,12 +4,22 @@
 
 ## Context
 
-Gen 1's build reported a ramp quota of 2 against a default target of 10 on one
-deck, permanently, because the owned Orzhov nonland pool contains no mana rock at
-all. The shortfall was a fact about the collection and could never become green.
-Its review recorded the same pattern on a second deck. A target that cannot be met
-is read once and then ignored, and the metrics that do matter get ignored alongside
-it.
+Gen 1's build reported two different things in the same shape: shortfalls no build
+could have closed, and shortfalls a different build could have closed.
+
+Its white-black deck held 0 sweepers against a default target of 2. The owned pool
+contains exactly three sweepers and all three are red, so that target is
+unreachable in white-black and always will be.
+
+The same deck held 2 ramp against a target of 10, and on the page it looked
+identical. It was not the same thing: the owned white-black pool supplies
+materially more ramp than the deck used, so that shortfall was a build choice.
+Gen 1's review recorded that no mana rock exists in the owned Orzhov nonland pool,
+which is true and is a narrower claim than it appears — ramp is the broader
+category, and it was available.
+
+Nothing in the report separated the two. A target that cannot be met is read once
+and then ignored, and the shortfalls that are build choices get ignored with it.
 
 Balance was decided as a metric rather than a gate. A band was proposed, calibrated
 from gen 1's three hero decks, and validated by the observation that it trips gen

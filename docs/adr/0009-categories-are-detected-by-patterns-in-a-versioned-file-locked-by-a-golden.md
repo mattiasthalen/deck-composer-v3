@@ -59,6 +59,14 @@ applied to a given table.
 
 A correction to a violation category is a data edit rather than a release.
 
+**A category definition states which card types it excludes.** A land that taps for
+mana is the mana base, not ramp, and a pattern matching the text that produces mana
+will otherwise count every nonbasic land: 17 names and 32 copies in this collection,
+enough to make every deck read as overwhelmingly ramp-heavy. The exclusion lives in
+the category's own definition in the data file, so correcting one stays a data edit.
+This is a definitional edge rather than a pattern bug, and it will recur for any
+category whose text appears on both a spell and a land.
+
 Regenerating the golden is a deliberate act that puts a diff in front of a human.
 This is the mechanism that keeps the detection honest, and it stops working the
 moment regeneration becomes automatic.
