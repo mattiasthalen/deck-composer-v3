@@ -660,11 +660,17 @@ _ESTIMATE_BASIS = "an even split of the 35-land floor across each deck's colours
 
 
 def _estimated_demand(identities: Sequence[Sequence[str]]) -> dict[str, int]:
-    """What the checkpoint predicted each basic would be asked for.
+    """What an unbuilt seat is charged against the basic budget.
 
-    No real deck splits its lands evenly across its colours, so this is only ever
-    an estimate. It is the only thing available before lists exist, and the
-    measured figure is compared against it once they do.
+    Two known errors, in opposite directions. No real deck splits its lands
+    evenly across its colours, and for a three-colour deck with a primary colour
+    that error runs generous — the dangerous way. Against that, this charges the
+    whole land floor to basics and assumes no nonbasic land absorbs a slot,
+    where gen 1's four decks absorbed two to six each, which runs conservative.
+
+    Neither is corrected here. A correction factor would be invented, and the
+    measured figure replaces the estimate seat by seat as decks are built, which
+    is why ADR-0005 builds the scarcest basic first.
     """
     demand = dict.fromkeys(BASIC_FOR_COLOR, 0.0)
     for identity in identities:
