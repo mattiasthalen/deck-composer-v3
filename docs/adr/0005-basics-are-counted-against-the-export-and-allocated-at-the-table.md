@@ -45,5 +45,14 @@ must be known before decks are built, not after.
 assumed an even split of basics across each deck's colours, which no real deck has;
 the direction holds and the exact threshold moves with colour weighting.
 
+That caveat carries weight at the commander checkpoint of
+[ADR-0008](0008-the-owner-picks-the-commanders-at-a-checkpoint-before-building.md),
+where no lists exist yet and headroom can only be the estimate. The owner chooses
+commanders partly on that number, and a commander choice is the most expensive
+decision at the table to revisit. So the estimate is labelled as one wherever it is
+shown, and once lists exist the measured budget is compared against it: a material
+divergence is reported, because it means a choice was made on a figure that did not
+hold.
+
 Acquiring basics changes the constraint and is the cheapest way to widen the
 commander options.
