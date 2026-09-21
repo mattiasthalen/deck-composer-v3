@@ -484,9 +484,30 @@ def _table_metrics(
                 block = basics[card.card.name]
                 block["used"] += entry.quantity
                 block["remaining"] = block["owned"] - block["used"]
+
+    # The commanders were picked partly on the checkpoint's estimate, which no
+    # list has to honour. Comparing the two here is what makes a choice made on
+    # a figure that did not hold visible (ADR-0005). The dangerous direction is
+    # an estimate that was too generous: it admits a commander set the
+    # collection cannot support, and nothing discovers that until four land
+    # bases exist.
+    estimate = _estimated_demand([deck.identity for deck in built])
+    generous = []
+    for name, block in basics.items():
+        predicted = estimate.get(name, 0)
+        block["estimated_used"] = predicted
+        block["divergence"] = block["used"] - predicted
+        if block["divergence"] > 0:
+            generous.append(name)
+
     return {
         "decks": len(built),
         "basis": "measured from the four lists",
+        "estimate": {
+            "basis": _ESTIMATE_BASIS,
+            "divergence": "measured minus estimated; positive means the estimate was generous",
+            "generous_for": sorted(generous),
+        },
         "basic_budget": {name: basics[name] for name in sorted(basics)},
         "spread": _spread(reports),
     }
@@ -607,6 +628,27 @@ def _pool(facts: CardFacts, identity: Sequence[str]) -> dict[str, int]:
     return {"legal_nonland_names": names, "copies": copies}
 
 
+BASIC_FOR_COLOR = {"W": "Plains", "U": "Island", "B": "Swamp", "R": "Mountain", "G": "Forest"}
+_ESTIMATE_BASIS = "an even split of the 35-land floor across each deck's colours"
+
+
+def _estimated_demand(identities: Sequence[Sequence[str]]) -> dict[str, int]:
+    """What the checkpoint predicted each basic would be asked for.
+
+    No real deck splits its lands evenly across its colours, so this is only ever
+    an estimate. It is the only thing available before lists exist, and the
+    measured figure is compared against it once they do.
+    """
+    demand = dict.fromkeys(BASIC_FOR_COLOR, 0.0)
+    for identity in identities:
+        if not identity:
+            continue
+        share = LAND_FLOOR / len(identity)
+        for colour in identity:
+            demand[colour] += share
+    return {BASIC_FOR_COLOR[colour]: round(amount) for colour, amount in demand.items()}
+
+
 def _headroom(facts: CardFacts, identities: Sequence[Sequence[str]]) -> dict[str, Any]:
     """Basics are the only contended resource here, so say how tight the set is.
 
@@ -614,30 +656,21 @@ def _headroom(facts: CardFacts, identities: Sequence[Sequence[str]]) -> dict[str
     real deck has. It is a headroom estimate for choosing commanders; `check`
     computes the real figure from the actual lists.
     """
-    basics = {
-        "W": "Plains", "U": "Island", "B": "Swamp", "R": "Mountain", "G": "Forest",
-    }  # fmt: skip
     owned = {
-        colour: (entry.owned if (entry := facts.card(name)) else 0)
-        for colour, name in basics.items()
+        name: (entry.owned if (entry := facts.card(name)) else 0)
+        for name in BASIC_FOR_COLOR.values()
     }
-    demand = dict.fromkeys(basics, 0.0)
-    for identity in identities:
-        if not identity:
-            continue
-        share = LAND_FLOOR / len(identity)
-        for colour in identity:
-            demand[colour] += share
+    demand = _estimated_demand(identities)
     return {
         "decks": len(identities),
-        "basis": "estimated: an even split of the 35-land floor across each deck's colours",
+        "basis": f"estimated: {_ESTIMATE_BASIS}",
         "basic_budget": {
-            basics[colour]: {
-                "owned": owned[colour],
-                "used": round(demand[colour]),
-                "remaining": owned[colour] - round(demand[colour]),
+            BASIC_FOR_COLOR[colour]: {
+                "owned": owned[BASIC_FOR_COLOR[colour]],
+                "used": demand[BASIC_FOR_COLOR[colour]],
+                "remaining": owned[BASIC_FOR_COLOR[colour]] - demand[BASIC_FOR_COLOR[colour]],
             }
             for colour in COLOR_ORDER
-            if demand[colour] or owned[colour]
+            if demand[BASIC_FOR_COLOR[colour]] or owned[BASIC_FOR_COLOR[colour]]
         },
     }

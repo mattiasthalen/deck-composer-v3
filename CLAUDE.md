@@ -51,6 +51,12 @@ basic budget are properties of the table and are not computable from one list.
 - Every metric reports its **ceiling beside its target** (ADR-0010):
   `ramp 2 (target 10, ceiling 11)` tells a build choice from a collection wall.
   The ceiling comes from colour identity alone; contention is reported apart.
+- The basic budget is reported **against the estimate the commanders were picked
+  on** (ADR-0005). A full run carries `estimated_used` and a signed `divergence`
+  per basic; positive means the estimate was generous, which is the dangerous
+  direction — it admits a commander set the collection cannot support, and
+  nothing finds out until four land bases exist. `estimate.generous_for` names
+  them. No threshold: the signed number is the fact.
 - **Balance has no threshold.** `check` reports the spread across the four decks
   on land count, average mana value, creature count and interaction count, and
   judges none of them. The table review is required to state all four.
