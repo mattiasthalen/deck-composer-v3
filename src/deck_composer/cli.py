@@ -82,8 +82,9 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="NAME",
-        help="check a table that has commanders but no decks yet, for the selection "
-        "checkpoint; repeatable",
+        help="a seat whose deck is not built yet; repeatable. With no deck files "
+        "this is the selection checkpoint, and alongside them it is a table "
+        "part-way through the build",
     )
     check.add_argument("--facts", type=Path, default=None, help="card facts path")
     check.add_argument(
@@ -108,18 +109,16 @@ def _refresh(args: argparse.Namespace, root: Path) -> dict[str, Any]:
 
 
 def _check(args: argparse.Namespace, root: Path) -> dict[str, Any]:
-    if bool(args.decks) == bool(args.commander):
-        args.usage_parser.error("give either deck files or --commander names, not both or neither")
+    if not args.decks and not args.commander:
+        args.usage_parser.error("give deck files, --commander names, or both")
     path = args.facts or root / CARD_FACTS
     card_facts = facts_module.read(path, display=_display(path, root))
     categories = args.categories or root / CATEGORIES
     rules = rules_module.read_rules(categories, display=_display(categories, root))
     targets_path = args.targets or root / TARGETS
     targets = rules_module.read_targets(targets_path, display=_display(targets_path, root))
-    if args.commander:
-        return check_module.checkpoint(card_facts, args.commander, rules, targets)
     decks = [manabox.read_deck(deck, display=_display(deck, root)) for deck in args.decks]
-    return check_module.check(decks, card_facts, rules, targets).to_dict()
+    return check_module.check(decks, card_facts, rules, targets, pending=args.commander).to_dict()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -17,6 +17,8 @@ from deck_composer.rules import read_rules, read_targets
 from tests.helpers import deck_text
 
 ZORALINE = "1 Zoraline, Cosmos Caller (BLB) 242"
+ZORALINE_NAME = "Zoraline, Cosmos Caller"
+WICK = "Wick, the Whorled Mind"
 
 
 def table(*texts: str) -> list:
@@ -417,17 +419,64 @@ def test_an_estimate_that_was_too_generous_is_named(card_facts: CardFacts) -> No
     assert "generous" in metrics["estimate"]["divergence"]
 
 
-def test_the_estimate_uses_the_same_basis_as_the_checkpoint(
+def test_an_unbuilt_seat_is_still_charged_to_the_budget(card_facts: CardFacts) -> None:
+    """Otherwise the first deck built looks far cheaper than it is.
+
+    Zoraline's list takes 5 Plains. Wick is unbuilt, and being three-colour his
+    seat is estimated to want roughly a third of a 35-land floor in each of his
+    colours. The remaining budget must already carry that.
+    """
+    deck = deck_text("d", [ZORALINE], ["5 Plains"])
+    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
+    swamp = report.metrics["basic_budget"]["Swamp"]
+    assert swamp["unbuilt_estimate"] == 12  # a third of 35, rounded
+    assert swamp["remaining"] == swamp["owned"] - swamp["used"] - 12
+    assert report.metrics["seats_unbuilt"] == 1
+
+
+def test_the_estimate_a_seat_carries_is_the_one_it_is_later_judged_against(
     card_facts: CardFacts,
 ) -> None:
-    """Comparing a measurement to an estimate only means anything if it is the same one."""
-    estimated = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES, TARGETS)["table"][
-        "metrics"
-    ]
-    deck = deck_text("d", [ZORALINE], ["1 Plains"])
-    full = check_module.check(table(deck), card_facts, RULES, TARGETS).metrics
-    assert estimated["basis"].endswith(full["estimate"]["basis"])
-    assert (
-        estimated["basic_budget"]["Plains"]["used"]
-        == full["basic_budget"]["Plains"]["estimated_used"]
-    )
+    """A comparison to an estimate means nothing unless it is the same estimate.
+
+    What the checkpoint charges an unbuilt seat must equal what a later run
+    treats as that seat's baseline, or the divergence silently measures against
+    a figure nobody ever saw.
+    """
+    at_checkpoint = checkpoint(card_facts, [ZORALINE_NAME], RULES, TARGETS)
+    charged = at_checkpoint["table"]["metrics"]["basic_budget"]["Plains"]["unbuilt_estimate"]
+
+    once_built = check_module.check(
+        table(deck_text("d", [ZORALINE], ["1 Plains"])), card_facts, RULES, TARGETS
+    ).metrics
+    assert charged == once_built["basic_budget"]["Plains"]["estimated_used"]
+
+
+def test_a_checkpoint_carries_no_divergence(card_facts: CardFacts) -> None:
+    """Nothing is measured yet, so there is nothing to compare; absent, not zero."""
+    view = checkpoint(card_facts, [ZORALINE_NAME], RULES, TARGETS)
+    plains = view["table"]["metrics"]["basic_budget"]["Plains"]
+    assert "unbuilt_estimate" in plains
+    assert "divergence" not in plains and "estimated_used" not in plains
+    assert "estimate" not in view["table"]["metrics"]
+
+
+def test_a_projected_overrun_is_named_not_blocked(card_facts: CardFacts) -> None:
+    """Part of the projection is an estimate, and this project does not block on one.
+
+    Measured overuse is already an ownership violation. This names the basics a
+    part-built table is on course to run out of, which is the whole payoff of
+    building the scarcest basic first: seen at deck one, not deck four.
+    """
+    deck = deck_text("d", [ZORALINE], ["12 Swamp"])
+    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK, WICK])
+    metrics = report.metrics
+    assert metrics["basic_budget"]["Swamp"]["remaining"] < 0
+    assert "Swamp" in metrics["overcommitted"]
+    assert not [v for v in report.violations if v.code == "ownership"]
+
+
+def test_a_table_within_budget_names_nothing(card_facts: CardFacts) -> None:
+    deck = deck_text("d", [ZORALINE], ["1 Swamp"])
+    metrics = check_module.check(table(deck), card_facts, RULES, TARGETS).metrics
+    assert metrics["overcommitted"] == []

@@ -22,6 +22,15 @@ uv run pyright
 There are exactly two, and a new fact is a **field in `check`'s output, never a
 new verb**. A genuinely new verb supersedes ADR-0001.
 
+`check` takes the table at whatever stage it has reached: deck files for the
+seats that exist, `--commander` for the ones that do not yet. Four commanders
+and no decks is ADR-0008's checkpoint; one deck and three commanders is
+ADR-0005's scarcest-basic-first build order after its first seat. An unbuilt
+seat is still charged to the basic budget at its estimate, or the first deck
+built looks far cheaper than it is, and `overcommitted` names the basics the
+table is on course to run out of. A table with an unbuilt seat never reports
+`passed`.
+
 `check --commander` serves ADR-0008's selection checkpoint and is the same verb
 only while it returns **the same table-shaped object with the deck-dependent
 fields absent** — a table with commanders and no decks is that table earlier. It
