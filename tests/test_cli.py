@@ -79,11 +79,33 @@ def test_check_with_commanders_returns_the_checkpoint(tmp_path, facts_file, caps
     assert "basic_budget" in out["table"]["metrics"]
 
 
-def test_check_refuses_both_decks_and_commanders(tmp_path, facts_file, capsys) -> None:
-    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
-    with pytest.raises(SystemExit) as caught:
-        cli.main(["check", str(deck), "--commander", "Zoraline, Cosmos Caller"])
-    assert caught.value.code == 2
+def test_decks_and_commanders_compose_into_one_table(tmp_path, facts_file, capsys) -> None:
+    """ADR-0005 builds the scarcest basic first, so a table is part-built for a while.
+
+    Deck files are the seats that exist; --commander names the ones that do not
+    yet. Both are the same table, and the budget has to span all four or the
+    first deck looks far cheaper than it is.
+    """
+    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["15 Plains"]))
+    code, out, _ = run(
+        [
+            "check",
+            str(deck),
+            "--commander",
+            "Wick, the Whorled Mind",
+            "--facts",
+            str(facts_file),
+        ],
+        capsys,
+    )
+    assert code == 0
+    assert len(out["decks"]) == 2
+    built, seat = out["decks"]
+    assert "size" in built["metrics"] and "size" not in seat["metrics"]
+    metrics = out["table"]["metrics"]
+    assert metrics["decks"] == 1 and metrics["seats_unbuilt"] == 1
+    assert "measured" in metrics["basis"] and "estimated" in metrics["basis"]
+    assert "passed" not in out, "a table with an unbuilt seat must not report green"
 
 
 def test_check_refuses_neither_decks_nor_commanders(capsys) -> None:

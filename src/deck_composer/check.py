@@ -76,6 +76,7 @@ class TableReport:
     refreshed: str | None
     rules: Rules
     targets: Targets
+    seats: tuple[dict[str, Any], ...] = ()  # commanders whose decks are not built yet
 
     @property
     def passed(self) -> bool:
@@ -91,8 +92,11 @@ class TableReport:
                 "rules_hash": self.rules.content_hash,
                 "targets_version": self.targets.version,
             },
-            "passed": self.passed,
-            "decks": [deck.to_dict() for deck in self.decks],
+            # A table with seats still unbuilt cannot report green. Reporting it
+            # would have the shape of gen 1's false green, and shape is what gets
+            # read.
+            **({} if self.seats else {"passed": self.passed}),
+            "decks": [deck.to_dict() for deck in self.decks] + list(self.seats),
             "table": {
                 "passed": not self.violations,
                 "violations": [v.to_dict() for v in self.violations],
@@ -235,19 +239,80 @@ class _Built:
         return tuple(c for c in COLOR_ORDER if c in union)
 
 
-def check(decks: Sequence[Deck], facts: CardFacts, rules: Rules, targets: Targets) -> TableReport:
+def check(
+    decks: Sequence[Deck],
+    facts: CardFacts,
+    rules: Rules,
+    targets: Targets,
+    pending: Sequence[str] = (),
+) -> TableReport:
+    """One table, at whatever stage it has reached.
+
+    `pending` names the commanders whose decks are not built yet. A table with
+    four commanders and no decks is the ADR-0008 checkpoint; a table with one
+    deck and three commanders is the scarcest-basic-first build order of
+    ADR-0005 after its first seat. Both are this table, earlier, so both are
+    this object with the deck-dependent fields absent.
+    """
     built = [_build(deck, facts) for deck in decks]
     ceilings: dict[tuple[str, tuple[str, ...]], int] = {}
     reports = tuple(_deck_report(entry, facts, rules, targets, ceilings) for entry in built)
+    seats = tuple(
+        _seat(resolve(facts, name, where="seat"), facts, rules, targets, ceilings)
+        for name in pending
+    )
     return TableReport(
         decks=reports,
         violations=tuple(_table_violations(built, facts)),
-        metrics=_table_metrics(built, facts, reports),
+        metrics=_table_metrics(built, facts, reports, seats),
         export_sha256=facts.export_sha256,
         refreshed=facts.refreshed,
         rules=rules,
         targets=targets,
+        seats=seats,
     )
+
+
+def _seat(
+    entry: OwnedCard,
+    facts: CardFacts,
+    rules: Rules,
+    targets: Targets,
+    ceilings: dict[tuple[str, tuple[str, ...]], int],
+) -> dict[str, Any]:
+    """A seat with a commander and no deck: the same entry, with what it has."""
+    identity = tuple(c for c in COLOR_ORDER if c in set(entry.card.color_identity))
+    violations = []
+    if not is_legendary_creature(entry):
+        violations.append(
+            Violation(
+                "commander_ineligible",
+                {"card": entry.card.name, "type_line": entry.card.type_line},
+            )
+        )
+    if entry.card.legality != "legal":
+        violations.append(
+            Violation("not_legal", {"card": entry.card.name, "legality": entry.card.legality})
+        )
+    categories = {}
+    for category in rules.metrics:
+        key = (category.name, identity)
+        if key not in ceilings:
+            ceilings[key] = ceiling(facts, category, identity)
+        categories[category.name] = _with_context(None, targets.of(category.name), ceilings[key])
+    return {
+        "commander": [entry.card.name],
+        "color_identity": list(identity),
+        "violations": [v.to_dict() for v in violations],
+        "metrics": {
+            "pool": _pool(facts, identity),
+            "tribal_core": {
+                tribe: {"ceiling": tribal_core(facts, tribe, identity, excluding=entry.card.name)}
+                for tribe in subtypes(entry.card.type_line)
+            },
+            "categories": categories,
+        },
+    }
 
 
 def _build(deck: Deck, facts: CardFacts) -> _Built:
@@ -472,45 +537,69 @@ def _table_violations(built: Sequence[_Built], facts: CardFacts) -> list[Violati
 
 
 def _table_metrics(
-    built: Sequence[_Built], facts: CardFacts, reports: Sequence[DeckReport]
+    built: Sequence[_Built],
+    facts: CardFacts,
+    reports: Sequence[DeckReport],
+    seats: Sequence[dict[str, Any]] = (),
 ) -> dict[str, Any]:
-    basics: dict[str, dict[str, int]] = {}
+    basics: dict[str, dict[str, Any]] = {}
     for entry in facts.cards:
         if is_basic(entry) and entry.owned:
-            basics[entry.card.name] = {"owned": entry.owned, "used": 0, "remaining": entry.owned}
+            basics[entry.card.name] = {"owned": entry.owned, "used": 0}
     for deck in built:
         for entry, card in deck.cards:
             if is_basic(card) and card.card.name in basics:
-                block = basics[card.card.name]
-                block["used"] += entry.quantity
-                block["remaining"] = block["owned"] - block["used"]
+                basics[card.card.name]["used"] += entry.quantity
 
     # The commanders were picked partly on the checkpoint's estimate, which no
-    # list has to honour. Comparing the two here is what makes a choice made on
-    # a figure that did not hold visible (ADR-0005). The dangerous direction is
-    # an estimate that was too generous: it admits a commander set the
-    # collection cannot support, and nothing discovers that until four land
-    # bases exist.
-    estimate = _estimated_demand([deck.identity for deck in built])
+    # list has to honour. Built seats are measured; unbuilt ones can only be
+    # estimated. Reporting both is what makes a choice made on a figure that did
+    # not hold visible (ADR-0005), and building the scarcest basic first is what
+    # turns the largest of those estimates into a measurement early.
+    on_built = _estimated_demand([deck.identity for deck in built])
+    on_unbuilt = _estimated_demand([tuple(seat["color_identity"]) for seat in seats])
+
     generous = []
     for name, block in basics.items():
-        predicted = estimate.get(name, 0)
-        block["estimated_used"] = predicted
-        block["divergence"] = block["used"] - predicted
-        if block["divergence"] > 0:
-            generous.append(name)
+        pending = on_unbuilt.get(name, 0)
+        block["remaining"] = block["owned"] - block["used"] - pending
+        if seats:
+            block["unbuilt_estimate"] = pending
+        if built:  # nothing measured yet means nothing to compare
+            block["estimated_used"] = on_built.get(name, 0)
+            block["divergence"] = block["used"] - block["estimated_used"]
+            if block["divergence"] > 0:
+                generous.append(name)
 
-    return {
+    # A projected overrun, not a violation: part of it is an estimate, and this
+    # project does not block on one. Measured overuse is already an ownership
+    # violation. Naming it here is what makes building the scarcest basic first
+    # worth doing — the set is seen to be over budget at deck one rather than
+    # at deck four.
+    overcommitted = sorted(name for name, block in basics.items() if block["remaining"] < 0)
+    metrics: dict[str, Any] = {
         "decks": len(built),
-        "basis": "measured from the four lists",
-        "estimate": {
+        "seats_unbuilt": len(seats),
+        "basis": _basis(bool(built), bool(seats)),
+        "overcommitted": overcommitted,
+        "basic_budget": {name: basics[name] for name in sorted(basics)},
+    }
+    if built:
+        metrics["estimate"] = {
             "basis": _ESTIMATE_BASIS,
             "divergence": "measured minus estimated; positive means the estimate was generous",
             "generous_for": sorted(generous),
-        },
-        "basic_budget": {name: basics[name] for name in sorted(basics)},
-        "spread": _spread(reports),
-    }
+        }
+        metrics["spread"] = _spread(reports)
+    return metrics
+
+
+def _basis(measured: bool, estimated: bool) -> str:
+    if measured and estimated:
+        return f"built seats measured; unbuilt seats estimated by {_ESTIMATE_BASIS}"
+    if measured:
+        return "measured from the lists"
+    return f"estimated: {_ESTIMATE_BASIS}"
 
 
 def _spread(reports: Sequence[DeckReport]) -> dict[str, Any]:
@@ -549,70 +638,8 @@ def _spread(reports: Sequence[DeckReport]) -> dict[str, Any]:
 def checkpoint(
     facts: CardFacts, names: Sequence[str], rules: Rules, targets: Targets
 ) -> dict[str, Any]:
-    """The same table object, before any deck exists.
-
-    ADR-0008 needs the tribal core and the basic headroom computable from the card
-    facts and a commander alone. This is `check` with fewer inputs rather than a
-    second operation: every deck-dependent field is absent, and no field appears
-    here that a full run cannot also produce.
-
-    `passed` is deliberately absent. A checkpoint reporting green would read as a
-    table that had passed, which is the false green gen 1 shipped.
-    """
-    decks = []
-    identities = []
-    for entry in (resolve(facts, name, where="checkpoint") for name in names):
-        identity = tuple(c for c in COLOR_ORDER if c in set(entry.card.color_identity))
-        identities.append(identity)
-        violations = []
-        if not is_legendary_creature(entry):
-            violations.append(
-                Violation(
-                    "commander_ineligible",
-                    {"card": entry.card.name, "type_line": entry.card.type_line},
-                )
-            )
-        if entry.card.legality != "legal":
-            violations.append(
-                Violation("not_legal", {"card": entry.card.name, "legality": entry.card.legality})
-            )
-        decks.append(
-            {
-                "commander": [entry.card.name],
-                "color_identity": list(identity),
-                "violations": [v.to_dict() for v in violations],
-                "metrics": {
-                    "pool": _pool(facts, identity),
-                    "tribal_core": {
-                        tribe: {
-                            "ceiling": tribal_core(
-                                facts, tribe, identity, excluding=entry.card.name
-                            )
-                        }
-                        for tribe in subtypes(entry.card.type_line)
-                    },
-                    "categories": {
-                        category.name: _with_context(
-                            None, targets.of(category.name), ceiling(facts, category, identity)
-                        )
-                        for category in rules.metrics
-                    },
-                },
-            }
-        )
-    return {
-        "bracket": BRACKET,
-        "snapshot": {
-            "export_sha256": facts.export_sha256,
-            "card_facts_refreshed": facts.refreshed,
-            "rules_version": rules.version,
-            "rules_hash": rules.content_hash,
-            "targets_version": targets.version,
-        },
-        "decks": decks,
-        "table": {"metrics": _headroom(facts, identities)},
-        "next": "Pick a set, then compose against the card facts and run check on the four decks.",
-    }
+    """The table before any deck exists: `check` with every seat still a commander."""
+    return check((), facts, rules, targets, pending=names).to_dict()
 
 
 def _pool(facts: CardFacts, identity: Sequence[str]) -> dict[str, int]:
