@@ -54,15 +54,25 @@ shown, and once lists exist the measured budget is compared against it: a materi
 divergence is reported, because it means a choice was made on a figure that did not
 hold.
 
-**Decks are built scarcest-basic first.** The estimate is least reliable exactly
-where this ADR's constraint binds: a three-colour deck's primary colour, which for
-a mandatory black commander is the Swamp count against the smallest basic supply in
-the collection. No correction factor is available that would not be invented, and
-the checkpoint has no lists to measure. Build order is the one lever that costs
-nothing: building the deck with the largest claim on the scarcest basic first turns
-its demand from an estimate into a measurement while three decks are still
-unbuilt, so the remaining budget is known before it is committed rather than
-discovered at the fourth deck.
+**Decks are built scarcest-basic first, and the table spans built and unbuilt
+seats.** The estimate is least reliable exactly where this ADR's constraint binds:
+a three-colour deck's primary colour, which for a mandatory black commander is the
+Swamp count against the smallest basic supply in the collection. No correction
+factor is available that would not be invented, and the checkpoint has no lists to
+measure. Build order is the lever that invents nothing: building the deck with the
+largest claim on the scarcest basic first turns its demand from an estimate into a
+measurement while three decks are still unbuilt.
+
+It works only if a part-built table is expressible. A seat that exists is charged
+at its measured basics, one that does not is charged at its estimate, and the
+remaining budget spans both. Checking a finished deck on its own reports the
+opposite of the truth — the first deck looks cheap because the other three seats
+are missing from the baseline, which is precisely the reassurance building it
+first was meant to deny. A table with an unbuilt seat reports no overall pass, for
+the reason a checkpoint does not.
+
+A projection that overruns is reported and does not block, because part of it is an
+estimate. Measured overuse is already an ownership violation.
 
 Acquiring basics changes the constraint and is the cheapest way to widen the
 commander options.
