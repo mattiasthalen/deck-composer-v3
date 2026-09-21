@@ -187,7 +187,9 @@ def test_the_basic_budget_is_reported_at_the_table(card_facts: CardFacts) -> Non
     decks = [deck_text(f"d{n}", [ZORALINE], ["5 Plains"]) for n in range(2)]
     report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     budget = report.metrics["basic_budget"]["Plains"]
-    assert budget == {"owned": 14, "used": 10, "remaining": 4}
+    assert budget["owned"] == 14
+    assert budget["used"] == 10
+    assert budget["remaining"] == 4
 
 
 # --- metrics --------------------------------------------------------------
@@ -381,3 +383,51 @@ def test_the_report_names_the_rules_it_ran_under(card_facts: CardFacts) -> None:
     assert report["snapshot"]["rules_version"]
     assert report["snapshot"]["rules_hash"].startswith("sha256:")
     assert report["snapshot"]["targets_version"]
+
+
+# --- the estimate the commanders were picked on --------------------------
+
+
+def test_the_measured_budget_is_compared_against_the_estimate(
+    card_facts: CardFacts,
+) -> None:
+    """The commanders were chosen partly on the checkpoint's estimate (ADR-0005).
+
+    Two Orzhov decks estimate an even 35-land split, so roughly 35 Plains. Both
+    lists here take 5, so the estimate asked for far more than the build used.
+    """
+    decks = [deck_text(f"d{n}", [ZORALINE], ["5 Plains"]) for n in range(2)]
+    metrics = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics
+    plains = metrics["basic_budget"]["Plains"]
+    assert plains["used"] == 10
+    assert plains["estimated_used"] == 35
+    assert plains["divergence"] == -25  # conservative: the safe direction
+
+
+def test_an_estimate_that_was_too_generous_is_named(card_facts: CardFacts) -> None:
+    """The dangerous direction: the build wants more than the checkpoint predicted.
+
+    It admits a commander set the collection cannot support, and nothing finds
+    that out until four land bases exist.
+    """
+    decks = [deck_text(f"d{n}", [ZORALINE], ["30 Plains"]) for n in range(2)]
+    metrics = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics
+    assert metrics["basic_budget"]["Plains"]["divergence"] == 25
+    assert "Plains" in metrics["estimate"]["generous_for"]
+    assert "generous" in metrics["estimate"]["divergence"]
+
+
+def test_the_estimate_uses_the_same_basis_as_the_checkpoint(
+    card_facts: CardFacts,
+) -> None:
+    """Comparing a measurement to an estimate only means anything if it is the same one."""
+    estimated = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES, TARGETS)["table"][
+        "metrics"
+    ]
+    deck = deck_text("d", [ZORALINE], ["1 Plains"])
+    full = check_module.check(table(deck), card_facts, RULES, TARGETS).metrics
+    assert estimated["basis"].endswith(full["estimate"]["basis"])
+    assert (
+        estimated["basic_budget"]["Plains"]["used"]
+        == full["basic_budget"]["Plains"]["estimated_used"]
+    )
