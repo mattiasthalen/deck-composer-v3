@@ -199,8 +199,11 @@ def test_the_tribal_core_is_two_numbers_never_one(card_facts: CardFacts) -> None
     core = one(text, card_facts).decks[0].metrics["tribal_core"]
     assert set(core) == {"Bat", "Cleric"}
     for numbers in core.values():
-        assert set(numbers) == {"type_line", "text_mention", "total"}
+        assert set(numbers) == {"type_line", "text_mention", "total", "ceiling"}
         assert numbers["total"] == numbers["type_line"] + numbers["text_mention"]
+        # The pool ceiling is the same two numbers, so a deck can be read
+        # against what its colours could actually field.
+        assert numbers["ceiling"]["total"] >= numbers["total"]
 
 
 def test_metrics_measure_the_deck(card_facts: CardFacts) -> None:
@@ -250,17 +253,19 @@ def test_a_face_name_resolves_to_its_card(card_facts: CardFacts) -> None:
 
 def test_the_checkpoint_computes_before_any_deck_exists(card_facts: CardFacts) -> None:
     """ADR-0008: tribal core and basic headroom from the card facts and a commander."""
-    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller", "Wick, the Whorled Mind"], RULES)
-    zoraline = view["commanders"][0]
+    view = checkpoint(
+        card_facts, ["Zoraline, Cosmos Caller", "Wick, the Whorled Mind"], RULES, TARGETS
+    )
+    zoraline = view["decks"][0]
     assert zoraline["color_identity"] == ["W", "B"]
-    assert zoraline["eligible"] is True
-    assert set(zoraline["tribal_core"]) == {"Bat", "Cleric"}
-    assert zoraline["pool"]["legal_nonland_names"] > 0
-    assert view["basic_headroom"]["colours"]["Plains"]["owned"] == 14
+    assert zoraline["violations"] == []
+    assert set(zoraline["metrics"]["tribal_core"]) == {"Bat", "Cleric"}
+    assert zoraline["metrics"]["pool"]["legal_nonland_names"] > 0
+    assert view["table"]["metrics"]["basic_budget"]["Plains"]["owned"] == 14
 
 
 def test_the_checkpoint_reports_the_snapshot(card_facts: CardFacts) -> None:
-    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES)
+    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES, TARGETS)
     assert view["snapshot"]["export_sha256"].startswith("sha256:")
     assert view["snapshot"]["card_facts_refreshed"] == "2026-09-20"
 
@@ -285,8 +290,8 @@ def test_a_commander_is_excluded_from_its_own_tribal_core(card_facts: CardFacts)
 def test_the_checkpoint_excludes_each_commander_from_its_own_core(
     card_facts: CardFacts,
 ) -> None:
-    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES)
-    bats = view["commanders"][0]["tribal_core"]["Bat"]
+    view = checkpoint(card_facts, ["Zoraline, Cosmos Caller"], RULES, TARGETS)
+    bats = view["decks"][0]["metrics"]["tribal_core"]["Bat"]["ceiling"]
     plain = check_module.tribal_core(card_facts, "Bat", ("W", "B"))
     assert bats["type_line"] == plain["type_line"] - 1
 

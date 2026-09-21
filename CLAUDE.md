@@ -22,6 +22,15 @@ uv run pyright
 There are exactly two, and a new fact is a **field in `check`'s output, never a
 new verb**. A genuinely new verb supersedes ADR-0001.
 
+`check --commander` serves ADR-0008's selection checkpoint and is the same verb
+only while it returns **the same table-shaped object with the deck-dependent
+fields absent** — a table with commanders and no decks is that table earlier. It
+becomes a third verb the moment it returns something different: enumerating
+candidate sets, ranking them, or emitting anything shaped like a recommendation.
+That would also take work ADR-0002 gives the composer. Counting verbs does not
+catch this, because the count stays at two; the test asserts the output's shape
+instead.
+
 `check` takes the whole table in one call, because cross-deck contention and the
 basic budget are properties of the table and are not computable from one list.
 

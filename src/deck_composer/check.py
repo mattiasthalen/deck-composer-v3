@@ -370,7 +370,10 @@ def _deck_metrics(
     tribes = {}
     for entry in built.commander:
         for tribe in subtypes(entry.card.type_line):
-            tribes[tribe] = _core_in_deck(built, tribe)
+            tribes[tribe] = {
+                **_core_in_deck(built, tribe),
+                "ceiling": tribal_core(facts, tribe, built.identity, excluding=entry.card.name),
+            }
 
     categories: dict[str, Any] = {}
     for category in rules.metrics:
@@ -386,6 +389,7 @@ def _deck_metrics(
     lands_total = sum(e.quantity for e, _ in lands)
     average = round(total_mv / count, 2) if count else 0
     return {
+        "pool": _pool(facts, built.identity),
         "size": built.deck.size,
         "lands": lands_total,
         "lands_target": _target_only(targets.of("lands")),
@@ -406,13 +410,15 @@ def _deck_metrics(
     }
 
 
-def _with_context(count: int, target: dict[str, float] | None, limit: int) -> dict[str, Any]:
+def _with_context(count: int | None, target: dict[str, float] | None, limit: int) -> dict[str, Any]:
     """`ramp 2 (target 10, ceiling 2)` — a build failure and a collection fact differ.
 
     A target the collection structurally cannot meet is still reported: with the
     ceiling beside it the number says the collection is short, which is actionable.
     """
-    body: dict[str, Any] = {"count": count, "ceiling": limit}
+    body: dict[str, Any] = {"ceiling": limit}
+    if count is not None:  # absent before any deck exists
+        body["count"] = count
     if target:
         body["target"] = _target_only(target)
     return body
@@ -480,6 +486,7 @@ def _table_metrics(
                 block["remaining"] = block["owned"] - block["used"]
     return {
         "decks": len(built),
+        "basis": "measured from the four lists",
         "basic_budget": {name: basics[name] for name in sorted(basics)},
         "spread": _spread(reports),
     }
@@ -518,39 +525,71 @@ def _spread(reports: Sequence[DeckReport]) -> dict[str, Any]:
 # --- the checkpoint ---------------------------------------------------------
 
 
-def checkpoint(facts: CardFacts, names: Sequence[str], rules: Rules) -> dict[str, Any]:
-    """The table before any deck exists: what distinguishes a set of commanders.
+def checkpoint(
+    facts: CardFacts, names: Sequence[str], rules: Rules, targets: Targets
+) -> dict[str, Any]:
+    """The same table object, before any deck exists.
 
-    ADR-0008 needs tribal core and basic headroom computable from the card facts
-    and a commander alone, and ADR-0002 forbids the composer asserting them.
+    ADR-0008 needs the tribal core and the basic headroom computable from the card
+    facts and a commander alone. This is `check` with fewer inputs rather than a
+    second operation: every deck-dependent field is absent, and no field appears
+    here that a full run cannot also produce.
+
+    `passed` is deliberately absent. A checkpoint reporting green would read as a
+    table that had passed, which is the false green gen 1 shipped.
     """
-    commanders = [resolve(facts, name, where="checkpoint") for name in names]
-    entries = []
-    for entry in commanders:
+    decks = []
+    identities = []
+    for entry in (resolve(facts, name, where="checkpoint") for name in names):
         identity = tuple(c for c in COLOR_ORDER if c in set(entry.card.color_identity))
-        entries.append(
+        identities.append(identity)
+        violations = []
+        if not is_legendary_creature(entry):
+            violations.append(
+                Violation(
+                    "commander_ineligible",
+                    {"card": entry.card.name, "type_line": entry.card.type_line},
+                )
+            )
+        if entry.card.legality != "legal":
+            violations.append(
+                Violation("not_legal", {"card": entry.card.name, "legality": entry.card.legality})
+            )
+        decks.append(
             {
-                "commander": entry.card.name,
-                "type_line": entry.card.type_line,
+                "commander": [entry.card.name],
                 "color_identity": list(identity),
-                "eligible": is_legendary_creature(entry),
-                "pool": _pool(facts, identity),
-                "ceilings": {
-                    category.name: ceiling(facts, category, identity) for category in rules.metrics
-                },
-                "tribal_core": {
-                    tribe: tribal_core(facts, tribe, identity, excluding=entry.card.name)
-                    for tribe in subtypes(entry.card.type_line)
+                "violations": [v.to_dict() for v in violations],
+                "metrics": {
+                    "pool": _pool(facts, identity),
+                    "tribal_core": {
+                        tribe: {
+                            "ceiling": tribal_core(
+                                facts, tribe, identity, excluding=entry.card.name
+                            )
+                        }
+                        for tribe in subtypes(entry.card.type_line)
+                    },
+                    "categories": {
+                        category.name: _with_context(
+                            None, targets.of(category.name), ceiling(facts, category, identity)
+                        )
+                        for category in rules.metrics
+                    },
                 },
             }
         )
     return {
-        "commanders": entries,
-        "basic_headroom": _headroom(facts, [e["color_identity"] for e in entries]),
+        "bracket": BRACKET,
         "snapshot": {
             "export_sha256": facts.export_sha256,
             "card_facts_refreshed": facts.refreshed,
+            "rules_version": rules.version,
+            "rules_hash": rules.content_hash,
+            "targets_version": targets.version,
         },
+        "decks": decks,
+        "table": {"metrics": _headroom(facts, identities)},
         "next": "Pick a set, then compose against the card facts and run check on the four decks.",
     }
 
@@ -590,12 +629,13 @@ def _headroom(facts: CardFacts, identities: Sequence[Sequence[str]]) -> dict[str
         for colour in identity:
             demand[colour] += share
     return {
-        "basis": "even split of a 35-land floor across each deck's colours; an estimate",
-        "colours": {
+        "decks": len(identities),
+        "basis": "estimated: an even split of the 35-land floor across each deck's colours",
+        "basic_budget": {
             basics[colour]: {
                 "owned": owned[colour],
-                "estimated_demand": round(demand[colour]),
-                "headroom": owned[colour] - round(demand[colour]),
+                "used": round(demand[colour]),
+                "remaining": owned[colour] - round(demand[colour]),
             }
             for colour in COLOR_ORDER
             if demand[colour] or owned[colour]

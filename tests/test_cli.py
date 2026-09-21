@@ -75,8 +75,8 @@ def test_check_with_commanders_returns_the_checkpoint(tmp_path, facts_file, caps
         ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts_file)], capsys
     )
     assert code == 0
-    assert out["commanders"][0]["commander"] == "Zoraline, Cosmos Caller"
-    assert "basic_headroom" in out
+    assert out["decks"][0]["commander"] == ["Zoraline, Cosmos Caller"]
+    assert "basic_budget" in out["table"]["metrics"]
 
 
 def test_check_refuses_both_decks_and_commanders(tmp_path, facts_file, capsys) -> None:
@@ -118,18 +118,60 @@ def test_refresh_reports_a_missing_export(tmp_path, capsys) -> None:
 # --- the shape of the surface --------------------------------------------
 
 
-def test_there_are_exactly_two_verbs() -> None:
-    """ADR-0001: a new fact is a field in check's output, never a new verb."""
-    import argparse
+def _paths(obj, prefix: str = "") -> set[str]:
+    """Every field path in a response, ignoring leaf names that vary by card."""
+    varies = (".basics.", ".color_sources.", ".basic_budget.", "tribal_core.", "curve.")
+    found: set[str] = set()
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            path = prefix + key
+            if not any(segment in path for segment in varies):
+                found.add(path)
+            found |= _paths(value, path + ".")
+    elif isinstance(obj, list) and obj:
+        found |= _paths(obj[0], prefix)
+    return {p for p in found if not any(segment in p for segment in varies)}
 
-    parser = cli.build_parser()
-    verbs: set[str] = set()
-    for action in parser._get_positional_actions():
-        if isinstance(action, argparse._SubParsersAction):
-            verbs |= set(action.choices)
-    assert verbs == {"refresh", "check"}, (
-        "adding a verb supersedes ADR-0001; a new fact belongs in check's output"
+
+def test_the_checkpoint_is_the_same_object_with_fields_absent(tmp_path, facts_file, capsys) -> None:
+    """ADR-0001 is guarded by the output's shape, not by counting verbs.
+
+    `check --commander` is the same verb only while it returns the same
+    table-shaped object with the deck-dependent fields absent. The failure mode
+    is a flag that quietly changes the operation, which leaves the verb count at
+    two — so counting verbs guards the wrong invariant. If this ever starts
+    enumerating, ranking or recommending commander sets, it has become a second
+    operation wearing a flag, and it has also taken work ADR-0002 gives the
+    composer.
+    """
+    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
+    _, full, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
+    _, point, _ = run(
+        ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts_file)], capsys
     )
+
+    introduced = _paths(point) - _paths(full)
+    assert introduced == set(), (
+        f"the checkpoint introduced fields a full run cannot produce: {introduced}"
+    )
+
+    absent = _paths(full) - _paths(point)
+    assert "passed" in absent, "a checkpoint must not report green; that is gen 1's false green"
+    assert {"decks.metrics.size", "decks.metrics.lands", "table.metrics.spread"} <= absent
+
+
+def test_the_checkpoint_reports_what_a_commander_alone_decides(
+    tmp_path, facts_file, capsys
+) -> None:
+    _, point, _ = run(
+        ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts_file)], capsys
+    )
+    metrics = point["decks"][0]["metrics"]
+    assert metrics["tribal_core"]["Bat"]["ceiling"]["total"] >= 0
+    assert "count" not in metrics["categories"]["ramp"]
+    assert "ceiling" in metrics["categories"]["ramp"]
+    assert point["table"]["metrics"]["basic_budget"]["Plains"]["owned"] > 0
+    assert "estimated" in point["table"]["metrics"]["basis"]
 
 
 def test_the_default_suite_never_reaches_the_network(monkeypatch, tmp_path, capsys) -> None:
