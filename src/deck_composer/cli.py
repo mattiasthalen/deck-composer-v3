@@ -114,10 +114,10 @@ def _check(args: argparse.Namespace, root: Path) -> dict[str, Any]:
     card_facts = facts_module.read(path, display=_display(path, root))
     categories = args.categories or root / CATEGORIES
     rules = rules_module.read_rules(categories, display=_display(categories, root))
-    if args.commander:
-        return check_module.checkpoint(card_facts, args.commander, rules)
     targets_path = args.targets or root / TARGETS
     targets = rules_module.read_targets(targets_path, display=_display(targets_path, root))
+    if args.commander:
+        return check_module.checkpoint(card_facts, args.commander, rules, targets)
     decks = [manabox.read_deck(deck, display=_display(deck, root)) for deck in args.decks]
     return check_module.check(decks, card_facts, rules, targets).to_dict()
 
