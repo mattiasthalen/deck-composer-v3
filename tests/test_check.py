@@ -1089,14 +1089,14 @@ def test_a_built_seat_declared_again_is_a_contract_failure() -> None:
             TARGETS,
             pending=[WICK, ZORALINE_NAME, "Camellia, the Seedmiser"],
         )
-    assert caught.value.error == "commander_given_twice"
+    assert caught.value.error == "commander_declared_twice"
     assert caught.value.detail["commanders"] == [WICK]
 
 
 def test_one_seat_named_twice_is_a_contract_failure(card_facts: CardFacts) -> None:
     with pytest.raises(ToolError) as caught:
         check_module.check((), card_facts, RULES, TARGETS, pending=[ZORALINE_NAME, ZORALINE_NAME])
-    assert caught.value.error == "commander_given_twice"
+    assert caught.value.error == "commander_declared_twice"
 
 
 def test_a_face_name_cannot_alias_a_repeat_past_the_check() -> None:
@@ -1110,7 +1110,7 @@ def test_a_face_name_cannot_alias_a_repeat_past_the_check() -> None:
             RULES,
             TARGETS,
         )
-    assert caught.value.error == "commander_given_twice"
+    assert caught.value.error == "commander_declared_twice"
 
 
 def test_four_distinct_commanders_are_accepted() -> None:
@@ -1120,3 +1120,22 @@ def test_four_distinct_commanders_are_accepted() -> None:
     pending = [ZORALINE_NAME, "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
     report = check_module.check([wick], read_facts(REAL_POOL), RULES, TARGETS, pending=pending)
     assert report.metrics["scarcest_basic"]["build_first"] == "Camellia, the Seedmiser"
+
+
+def test_four_commanders_with_one_repeated_is_not_a_complete_checkpoint() -> None:
+    """The same defect from the checkpoint side: four entries, three distinct.
+
+    Counted as four seats it would pass as complete and name a build order over
+    three commanders as if they were four (ADR-0006).
+    """
+    from deck_composer.facts import read as read_facts
+
+    with pytest.raises(ToolError) as caught:
+        checkpoint(
+            read_facts(REAL_POOL),
+            [WICK, ZORALINE_NAME, "Camellia, the Seedmiser", ZORALINE_NAME],
+            RULES,
+            TARGETS,
+        )
+    assert caught.value.error == "commander_declared_twice"
+    assert caught.value.detail["commanders"] == [ZORALINE_NAME]
