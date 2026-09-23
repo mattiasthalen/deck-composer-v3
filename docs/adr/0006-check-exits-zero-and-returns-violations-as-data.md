@@ -28,3 +28,14 @@ output.
 A card name the card facts do not carry is a contract failure rather than a
 violation, which keeps name resolution out of `check` and in the operation that
 writes the card facts.
+
+**A verdict field is present only when the thing it judges exists in full.** The
+table's `passed` and the table-level `passed` need all four seats and are absent
+until then; a deck's `passed` needs that deck and is present once it is built. A
+`passed: true` whose subject does not yet exist is vacuously true — `all()` over
+nothing — and reads as a pass. Gen 1 shipped that shape and it was caught by hand.
+The rule is about the subject, not the depth: dropping every `passed` at a
+part-built table would discard a built deck's real result to remove a vacuous one,
+and a consumer would then have to derive legality from an empty `violations` list.
+The `next` sentence follows the same rule and never certifies what a withheld
+verdict withholds.
