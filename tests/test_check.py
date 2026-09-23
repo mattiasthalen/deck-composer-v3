@@ -928,3 +928,31 @@ def test_only_a_complete_clean_table_says_render(card_facts: CardFacts) -> None:
     report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
     assert report.complete and report.passed
     assert "Render the decklists" in report.to_dict()["next"]
+
+
+def test_a_sole_claimant_claims_no_comparison() -> None:
+    """With no rivals `all()` was vacuously true, so a lone seat "had the most
+    colours" and "the least reliable estimate" — compared with nobody. It hits
+    every part-built table down to its last unbuilt seat."""
+    basics = _budget(Mountain=(42, -5), Island=(49, 30))
+    result = check_module.scarcest_basic(basics, [_seat("Alone", "UR")])
+    assert result is not None
+    assert result["decided_by"] == "sole"
+    sentence = check_module._build_order_sentence(result)
+    assert "least reliable" not in sentence and "most colours" not in sentence
+    assert "nothing to compare" in sentence
+
+
+@pytest.mark.parametrize("decided_by", ["sole", "colours", "claim", "name"])
+def test_the_build_order_sentence_reads_for_every_clause(decided_by: str) -> None:
+    """Built from the block directly, so even the clause the even split cannot
+    reach is checked. The review found "claiming it it has" and a doubled
+    "the seats claiming it" — both would fail here."""
+    import re
+
+    block = {"basic": "Swamp", "build_first": "Wick", "decided_by": decided_by}
+    sentence = check_module._build_order_sentence(block)
+    assert not re.search(r"\b(\w+) \1\b", sentence), f"doubled word in: {sentence}"
+    assert sentence.count("seats claiming it") <= 1
+    assert "Wick" in sentence and "Swamp" in sentence
+    assert ("least reliable" in sentence) == (decided_by == "colours")

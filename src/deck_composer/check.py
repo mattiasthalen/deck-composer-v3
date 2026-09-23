@@ -543,16 +543,20 @@ def _build_order_sentence(scarcest: dict[str, Any]) -> str:
     """The seat to build next, with the reason that actually decided it."""
     seat, basic = scarcest["build_first"], scarcest["basic"]
     reason = {
-        "colours": "it has the most colours, so its estimate is the least reliable",
-        "claim": "it ties on colours and has the largest claim",
+        "sole": "no other seat claims it, so there was nothing to compare",
+        "colours": (
+            "of the seats claiming it, this one has the most colours, so its estimate "
+            "is the least reliable"
+        ),
+        "claim": "of the seats claiming it, this one ties on colours and has the largest claim",
         "name": (
-            "the seats claiming it tie on colours and claim, so the arbitrary break "
-            "on commander name decides"
+            "the seats claiming it tie on colours and claim, so the arbitrary break on "
+            "commander name decides"
         ),
     }[scarcest["decided_by"]]
     return (
-        f" ADR-0005 builds {seat}'s seat next: {basic} is the basic with the least "
-        f"headroom, and of the seats claiming it {reason}."
+        f" ADR-0005 builds {seat}'s seat next. {basic} is the basic with the least "
+        f"headroom, and {reason}."
     )
 
 
@@ -763,8 +767,14 @@ def _decided_by(first: dict[str, Any], claimants: Sequence[dict[str, Any]]) -> s
     Only a win on colours means the seat's estimate is the least reliable. A win
     on the name tie means the claimants were equal and the break was arbitrary,
     and saying "least reliable" there would state a reason that did not decide.
+    A sole claimant was compared with nothing, and says so.
     """
     rivals = [c for c in claimants if c is not first]
+    if not rivals:
+        # `all()` over no rivals is vacuously true, and read as a win on colours
+        # it claimed a comparison with nobody — the vacuous-verdict shape again,
+        # this time in a reason rather than a `passed`.
+        return "sole"
     if all(c["colours"] < first["colours"] for c in rivals):
         return "colours"
     level = [c for c in rivals if c["colours"] == first["colours"]]
