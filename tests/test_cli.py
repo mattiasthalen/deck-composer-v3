@@ -168,11 +168,18 @@ def test_the_checkpoint_is_the_same_object_with_fields_absent(tmp_path, facts_fi
     """
     deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
     _, full, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
+    # A part-built table is also a run over real decks, and it is the stage that
+    # carries seat-dependent facts such as the scarcest basic. The checkpoint may
+    # produce nothing that no stage with decks can produce.
+    _, part, _ = run(
+        ["check", str(deck), "--commander", "Wick, the Whorled Mind", "--facts", str(facts_file)],
+        capsys,
+    )
     _, point, _ = run(
         ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts_file)], capsys
     )
 
-    introduced = _paths(point) - _paths(full)
+    introduced = _paths(point) - (_paths(full) | _paths(part))
     assert introduced == set(), (
         f"the checkpoint introduced fields a full run cannot produce: {introduced}"
     )

@@ -599,3 +599,138 @@ def test_one_basic_on_two_lines_is_summed(card_facts: CardFacts, lines: list[str
     metrics = one(deck_text("d", [ZORALINE], lines), card_facts).decks[0].metrics
     assert metrics["basics"] == {"Forest": 35}
     assert sum(metrics["basics"].values()) == metrics["lands"]
+
+
+# --- which seat ADR-0005 builds first -------------------------------------
+
+
+def _seat(name: str, colours: str) -> dict:
+    return {"commander": [name], "color_identity": list(colours)}
+
+
+def _budget(**remaining: tuple[int, int]) -> dict:
+    """basic name -> (owned, remaining)."""
+    return {name: {"owned": o, "used": 0, "remaining": r} for name, (o, r) in remaining.items()}
+
+
+def test_the_seat_with_most_colours_is_built_first_not_the_largest_claim() -> None:
+    """The rejected rule built the largest claim, and so never the three-colour seat.
+
+    A two-colour black seat claims about 18 Swamps and a three-colour one about 12,
+    but the three-colour estimate is the unreliable one, so it is measured first.
+    """
+    basics = _budget(Swamp=(38, -9), Plains=(40, 5), Island=(49, 37), Mountain=(42, 13))
+    result = check_module.scarcest_basic(basics, [_seat("Two", "WB"), _seat("Three", "UBR")])
+    assert result is not None
+    assert result["basic"] == "Swamp"
+    assert {c["commander"] for c in result["claimants"]} == {"Two", "Three"}
+    assert result["build_first"] == "Three"
+
+
+def test_a_tie_on_colours_breaks_to_the_largest_claim() -> None:
+    """A mono-black seat claims all 35 of its lands as Swamps; a two-colour one 18."""
+    basics = _budget(Swamp=(38, -20), Plains=(40, 20), Forest=(54, 36))
+    seats = [_seat("Two", "WB"), _seat("Other two", "BG"), _seat("Mono", "B")]
+    result = check_module.scarcest_basic(basics, seats)
+    assert result is not None and result["build_first"] in {"Two", "Other two"}
+    mono_vs_two = check_module.scarcest_basic(basics, [_seat("Mono", "B"), _seat("Mono2", "B")])
+    assert mono_vs_two is not None and mono_vs_two["build_first"] == "Mono"
+
+
+def test_a_full_tie_goes_to_the_seat_given_first() -> None:
+    """The order is the composer's input, so the tool never reorders an exact tie."""
+    basics = _budget(Swamp=(38, -9), Plains=(40, 5), Forest=(54, 20))
+    for first, second in (("A", "B"), ("B", "A")):
+        result = check_module.scarcest_basic(basics, [_seat(first, "WB"), _seat(second, "WB")])
+        assert result is not None and result["build_first"] == first
+
+
+def test_scarcest_means_least_headroom_not_least_owned() -> None:
+    """39 of 40 Plains claimed is scarcer than 10 of 38 Swamps (ADR-0005)."""
+    basics = _budget(Plains=(40, 1), Swamp=(38, 28))
+    result = check_module.scarcest_basic(basics, [_seat("Orzhov", "WB")])
+    assert result is not None and result["basic"] == "Plains"
+
+
+def test_a_basic_no_unbuilt_seat_claims_is_never_the_scarcest() -> None:
+    """Built seats may have spent it, but it cannot be measured early by anyone."""
+    basics = _budget(Forest=(54, -50), Swamp=(38, -2), Plains=(40, 10))
+    result = check_module.scarcest_basic(basics, [_seat("Orzhov", "WB")])
+    assert result is not None and result["basic"] == "Swamp"
+
+
+def test_no_claimed_basic_names_no_seat() -> None:
+    """A colourless commander claims no basic; there is nothing to build first."""
+    assert check_module.scarcest_basic(_budget(Swamp=(38, 38)), [_seat("Page", "")]) is None
+
+
+REAL_POOL = Path("data/card_facts.json")
+
+
+@pytest.mark.parametrize(
+    ("commanders", "basic", "claimants"),
+    [
+        (
+            [WICK, "Mabel, Heir to Cragflame", "Camellia, the Seedmiser", ZORALINE_NAME],
+            "Swamp",
+            {WICK, "Camellia, the Seedmiser", ZORALINE_NAME},
+        ),
+        (
+            [ZORALINE_NAME, "Camellia, the Seedmiser", "Mabel, Heir to Cragflame", WICK],
+            "Swamp",
+            {WICK, "Camellia, the Seedmiser", ZORALINE_NAME},
+        ),
+        (
+            # Swamp is not tight here at all; Wick's unreliable claim is on Mountain.
+            [WICK, "Mabel, Heir to Cragflame", "Finneas, Ace Archer", "Alania, Divergent Storm"],
+            "Mountain",
+            {WICK, "Mabel, Heir to Cragflame", "Alania, Divergent Storm"},
+        ),
+    ],
+)
+def test_wick_is_built_first_at_this_table_for_the_stated_reason(
+    commanders: list[str], basic: str, claimants: set[str]
+) -> None:
+    """Against the real collection. Wick comes first because his estimate is the
+    least reliable claim on the tightest basic, not because he is black — the
+    third table shows the difference, since there it is Mountain that binds.
+    """
+    from deck_composer.facts import read as read_facts
+
+    view = checkpoint(read_facts(REAL_POOL), commanders, RULES, TARGETS)
+    scarcest = view["table"]["metrics"]["scarcest_basic"]
+    assert scarcest["basic"] == basic
+    assert {c["commander"] for c in scarcest["claimants"]} == claimants
+    assert scarcest["build_first"] == WICK
+    assert WICK in view["next"]
+
+
+def test_a_part_built_table_names_the_next_seat(card_facts: CardFacts) -> None:
+    """With the built seat clean: violations come first in `next`, rightly, so a
+    seat carrying its own would never reach the sentence that names the next one.
+    """
+    import dataclasses
+
+    deck = deck_text("d", [ZORALINE], ["1 Plains"])
+    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
+    clean = dataclasses.replace(
+        report,
+        violations=(),
+        decks=tuple(dataclasses.replace(d, violations=()) for d in report.decks),
+    )
+    assert clean.metrics["scarcest_basic"]["build_first"] == WICK
+    assert WICK in clean.to_dict()["next"]
+
+
+def test_violations_come_before_the_next_seat(card_facts: CardFacts) -> None:
+    """Fixing what is built outranks building more; the seat stays in the metrics."""
+    deck = deck_text("d", [ZORALINE], ["1 Plains"])
+    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
+    assert report.violation_count
+    assert report.to_dict()["next"].startswith(f"{report.violation_count} violation")
+    assert report.metrics["scarcest_basic"]["build_first"] == WICK
+
+
+def test_a_finished_table_names_no_seat(card_facts: CardFacts) -> None:
+    metrics = one(deck_text("d", [ZORALINE], ["1 Plains"]), card_facts).metrics
+    assert "scarcest_basic" not in metrics

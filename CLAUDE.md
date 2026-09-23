@@ -31,6 +31,16 @@ built looks far cheaper than it is, and `overcommitted` names the basics the
 table is on course to run out of. A table with an unbuilt seat never reports
 `passed`.
 
+While any seat is unbuilt, `table.metrics.scarcest_basic` names the basic with
+the least projected headroom among those an unbuilt seat claims, lists its
+claimants, and names the seat ADR-0005 builds first: the claimant with the most
+colours, whose estimate is the least reliable, ties to the largest claim, then
+to the seat given first. `next` renders from it. This is computation over colour
+identity and projected headroom and chooses nothing about any deck; left to the
+composer it would be a fact the builder derives about its own picks (ADR-0002).
+It is **not** the largest claim: under an even split a two-colour seat out-claims
+a three-colour one, so that rule never builds the three-colour seat first.
+
 `check --commander` serves ADR-0008's selection checkpoint and is the same verb
 only while it returns **the same table-shaped object with the deck-dependent
 fields absent** — a table with commanders and no decks is that table earlier. It
