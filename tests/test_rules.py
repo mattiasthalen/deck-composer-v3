@@ -205,3 +205,11 @@ def test_an_invalid_pattern_names_the_file_to_fix(tmp_path: Path) -> None:
         read_rules(path)
     assert caught.value.error == "pattern_invalid"
     assert "categories.json" in caught.value.next_step
+
+
+def test_undecodable_categories_is_a_contract_failure(tmp_path: Path) -> None:
+    path = tmp_path / "categories.json"
+    path.write_bytes(b'{"schema": 1, "x": "\xff\xfe"}')
+    with pytest.raises(ToolError) as caught:
+        read_rules(path)
+    assert caught.value.error == "categories_unreadable"

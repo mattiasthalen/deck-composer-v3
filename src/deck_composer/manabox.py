@@ -215,6 +215,12 @@ _SCHEMA_LINE = re.compile(r"^//\s*schema:\s*(.+?)\s*$", re.I)
 _SECTION_LINE = re.compile(r"^//\s*(commander|mainboard|maybeboard)\s*$", re.I)
 # A pinned printing ends in ` (SET) COLLECTOR`; a basic or an unowned card does not.
 _ENTRY = re.compile(r"^(\d+)\s+(.+?)(?:\s+\(([A-Za-z0-9]{2,6})\)\s+(\S+))?$")
+# A set-and-collector suffix that does not end the line. The name capture above
+# is deliberately loose, because real names carry parentheses — "Erase (Not the
+# Urza's Legacy One)" — so without this a trailing token such as `*F*` is
+# swallowed into the name and resurfaces later as an unknown card with no line
+# number. Anything after the suffix is outside the recorded format (A5).
+_TRAILING = re.compile(r"\s\([A-Za-z0-9]{2,6}\)\s+\S+\s+\S")
 
 
 @dataclass(frozen=True, slots=True)
@@ -294,7 +300,7 @@ def parse_deck(text: str, *, path: str) -> Deck:
             problems.append({"line": number, "problem": "entry_before_section", "text": line})
             continue
         found = _ENTRY.match(line)
-        if found is None:
+        if found is None or (found.group(3) is None and _TRAILING.search(line)):
             problems.append({"line": number, "problem": "unparseable_entry", "text": line})
             continue
         quantity = int(found.group(1))

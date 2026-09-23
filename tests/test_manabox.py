@@ -158,3 +158,23 @@ def test_a_missing_deck_file_says_what_to_do(tmp_path: Path) -> None:
     with pytest.raises(ToolError) as caught:
         read_deck(tmp_path / "nope.txt")
     assert caught.value.error == "deck_not_found"
+
+
+def test_anything_after_a_pinned_suffix_is_unparseable() -> None:
+    """It was swallowed into the name and resurfaced as an unknown card, no line.
+
+    A foil marker such as `*F*` is not part of the recorded format (A5); if a
+    real ManaBox export carries one, this fails loudly at the line and A5 needs
+    amending, which is the order it should happen in.
+    """
+    with pytest.raises(ToolError) as caught:
+        parse_deck("// schema: 1\n// Mainboard\n1 Sol Ring (LTR) 123 *F*\n", path="d")
+    problem = caught.value.detail["problems"][0]
+    assert problem["problem"] == "unparseable_entry"
+    assert problem["line"] == 3
+
+
+def test_a_name_carrying_parentheses_still_parses() -> None:
+    """The strictness is about a trailing suffix, not about parentheses in names."""
+    deck = parse_deck("// schema: 1\n// Mainboard\n1 Erase (Not the Urza's Legacy One)\n", path="d")
+    assert deck.mainboard[0] == Entry(1, "Erase (Not the Urza's Legacy One)")

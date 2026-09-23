@@ -169,7 +169,7 @@ def _load(path: Path, shown: str, what: str) -> tuple[dict[str, Any], str]:
     digest = "sha256:" + hashlib.sha256(raw).hexdigest()
     try:
         payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ToolError(
             f"{what}_unreadable", {"path": shown}, f"Fix the JSON in data/{what}.json."
         ) from exc

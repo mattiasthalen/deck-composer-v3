@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -23,7 +22,6 @@ from deck_composer.errors import ToolError
 
 API = "https://api.scryfall.com"
 COLLECTION_URL = f"{API}/cards/collection"
-NAMED_URL = f"{API}/cards/named"
 REPOSITORY = "https://github.com/mattiasthalen/deck-composer-v3"
 BATCH = 75
 SPACING = 0.1
@@ -158,7 +156,7 @@ class Client:
                 )
             try:
                 return json.loads(raw)
-            except json.JSONDecodeError as exc:
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 raise ToolError(
                     "scryfall_unparseable",
                     {"endpoint": url.split("?")[0]},
@@ -185,12 +183,6 @@ class Client:
             found.extend(payload.get("data", []))
             missing.extend(payload.get("not_found", []))
         return found, missing
-
-    def fuzzy(self, name: str) -> str | None:
-        """One suggestion for an unresolved name. Never stored anywhere."""
-        url = f"{NAMED_URL}?fuzzy={urllib.parse.quote(name)}"
-        payload = self._send("GET", url, None)
-        return payload.get("name") if isinstance(payload, dict) else None
 
 
 # --- the projection ---------------------------------------------------------

@@ -216,7 +216,7 @@ def refresh(
     )
 
     rendered = render(facts)
-    written = not facts_path.exists() or facts_path.read_text(encoding="utf-8") != rendered
+    written = not facts_path.exists() or facts_path.read_bytes() != rendered.encode("utf-8")
     if written:
         write(rendered, facts_path)
 
@@ -443,7 +443,7 @@ def read(path: Path, *, display: str | None = None) -> CardFacts:
         raise ToolError(
             "card_facts_not_found", {"path": shown}, "Run refresh against a ManaBox export."
         ) from exc
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ToolError(
             "card_facts_unreadable", {"path": shown}, "Delete the file and run refresh again."
         ) from exc
