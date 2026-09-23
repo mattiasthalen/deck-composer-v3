@@ -134,17 +134,24 @@ class TableReport:
             if short
             else ""
         )
+        scarcest = self.metrics.get("scarcest_basic")
+        order = (
+            f" ADR-0005 builds {scarcest['build_first']}'s seat next: of the seats "
+            f"claiming {scarcest['basic']}, the basic with the least headroom, its "
+            "estimate is the least reliable."
+            if scarcest
+            else ""
+        )
         if self.seats and not self.decks:
             return (
                 "This is the checkpoint: no deck exists yet, so nothing is certified. "
-                "Pick the commanders, then build the seat with the largest claim on "
-                "the scarcest basic first (ADR-0005)." + warning
+                "Once the commanders are picked, build scarcest basic first." + order + warning
             )
         if self.seats:
             return (
-                f"The built seats are clean; {len(self.seats)} seat(s) are unbuilt, so "
-                "the table is not. Build the next seat and run check again with the "
-                "rest passed as --commander." + warning
+                f"The built seats are clean, but {len(self.seats)} seat(s) are unbuilt, so "
+                "the table is not certified. Run check again after each seat, with the "
+                "rest passed as --commander." + order + warning
             )
         return "No violations. Render the decklists, then write the playbooks from these metrics."
 
@@ -632,6 +639,9 @@ def _table_metrics(
         "overcommitted": overcommitted,
         "basic_budget": {name: basics[name] for name in sorted(basics)},
     }
+    scarcest = scarcest_basic(basics, seats)
+    if scarcest is not None:
+        metrics["scarcest_basic"] = scarcest
     if built:
         metrics["estimate"] = {
             "basis": _ESTIMATE_BASIS,
@@ -640,6 +650,56 @@ def _table_metrics(
         }
         metrics["spread"] = _spread(reports)
     return metrics
+
+
+def scarcest_basic(
+    basics: dict[str, dict[str, Any]], seats: Sequence[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """The scarcest basic, and the unbuilt seat ADR-0005 builds first against it.
+
+    Computed rather than chosen: it reads colour identity and projected headroom
+    and picks nothing about any deck. Left to the composer, it would be a fact
+    the builder derives about its own picks, which ADR-0002 forbids.
+
+    The scarcest basic has the least projected headroom — owned, less measured,
+    less estimated for the unbuilt seats — among the basics an unbuilt seat
+    claims; 39 of 40 Plains claimed is scarcer than 10 of 38 Swamps, and a basic
+    no unbuilt seat claims cannot be the one worth measuring early.
+
+    The seat built first is the claimant with the most colours, because an even
+    split errs by about 2 for two colours and by 3 to 6 in the generous
+    direction for three: it is the least reliable estimate, the one worth
+    turning into a measurement. Ties break to the largest claim, then to the
+    seat given first, so the order stays the composer's input.
+
+    The rejected rule built the largest claim first. Under an even split a
+    two-colour seat out-claims a three-colour one, so it never built the
+    three-colour seat at any table tested — the opposite of its purpose.
+    """
+    claims = [
+        {
+            "commander": seat["commander"][0],
+            "colours": len(seat["color_identity"]),
+            "demand": _estimated_demand([tuple(seat["color_identity"])]),
+        }
+        for seat in seats
+    ]
+    claimed = [name for name in basics if any(claim["demand"].get(name, 0) for claim in claims)]
+    if not claimed:
+        return None
+    basic = min(claimed, key=lambda name: (basics[name]["remaining"], basics[name]["owned"], name))
+    claimants = [
+        {"commander": c["commander"], "colours": c["colours"], "estimated": c["demand"][basic]}
+        for c in claims
+        if c["demand"].get(basic, 0)
+    ]
+    first = max(claimants, key=lambda c: (c["colours"], c["estimated"]))  # max keeps the first
+    return {
+        "basic": basic,
+        "remaining": basics[basic]["remaining"],
+        "claimants": claimants,
+        "build_first": first["commander"],
+    }
 
 
 def _owned(facts: CardFacts, name: str) -> int:
