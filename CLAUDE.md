@@ -123,6 +123,16 @@ A module never parses another module's format.
 - **A decklist line is not uniformly `N Name (SET) COLLECTOR`.** Basics and
   unowned maybeboard entries are the bare `15 Plains`. A parser requiring the
   suffix drops every basic — the quantity ADR-0005 makes load-bearing.
+  Anything **after** a pinned suffix — `1 Sol Ring (LTR) 123 *F*` — is outside
+  the recorded format and fails at its line; left loose, it is swallowed into
+  the name and resurfaces as an unknown card with no line number.
+- **The basic budget always carries all five basics**, owned or not. A basic
+  owned at zero is the row a black seat will overrun, so it can never be the
+  one that vanishes.
+- **Decoding is a contract failure like any other.** Every read of bytes catches
+  `UnicodeDecodeError` beside `JSONDecodeError`; a traceback on stderr breaks
+  ADR-0006. And beware a leading `\xff\xfe` in a test: `json` reads it as a
+  UTF-16 byte-order mark and raises the error you already catch.
 - **The maybeboard holds unowned cards** and counts towards nothing.
 - 25 names contain `//`; the export is CRLF; `edhrec_rank` is absent on tokens
   and seven owned cards.

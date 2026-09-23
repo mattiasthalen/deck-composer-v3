@@ -210,3 +210,15 @@ def test_the_default_suite_never_reaches_the_network(monkeypatch, tmp_path, caps
     monkeypatch.setattr("time.sleep", lambda _: None)
     code, _out, _err = run(["refresh", str(EXPORT), "--out", str(tmp_path / "f.json")], capsys)
     assert code == 0
+
+
+def test_undecodable_card_facts_exits_one_with_json(tmp_path, capsys) -> None:
+    """The contract itself: exit 1, one JSON object on stderr, nothing on stdout."""
+    facts = tmp_path / "card_facts.json"
+    facts.write_bytes(b'{"schema": 1, "cards": ["\xff\xfe"]}')
+    code, out, err = run(
+        ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts)], capsys
+    )
+    assert code == 1
+    assert out == {}
+    assert err["error"] == "card_facts_unreadable" and err["next"]

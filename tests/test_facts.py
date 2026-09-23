@@ -199,3 +199,31 @@ def test_the_result_always_carries_a_next_sentence(tmp_path, export, transport) 
     payload = run(tmp_path, export, transport).to_dict()
     assert payload["next"]
     assert payload["export"]["sha256"].startswith("sha256:")
+
+
+def test_undecodable_card_facts_is_a_contract_failure(tmp_path) -> None:
+    """A raw UnicodeDecodeError broke ADR-0006: exit 1 carries JSON, never a traceback."""
+    path = tmp_path / "card_facts.json"
+    path.write_bytes(b'{"schema": 1, "cards": ["\xff\xfe"]}')
+    with pytest.raises(ToolError) as caught:
+        read(path)
+    assert caught.value.error == "card_facts_unreadable"
+
+
+def test_refresh_regenerates_over_an_undecodable_file(tmp_path, export, transport) -> None:
+    """Treating the old file as absent is not enough if the next line re-reads it."""
+    path = tmp_path / "card_facts.json"
+    path.write_bytes(b"\xff\xfe not json")
+    result = run(tmp_path, export, transport, path=path)
+    assert result.written
+    assert read(path).export_sha256 == export.sha256
+
+
+def test_an_undecodable_scryfall_response_is_a_contract_failure() -> None:
+    """Not a leading BOM: json detects `\\xff\\xfe` as UTF-16 and raises the error it
+    already caught. A bad byte mid-document is what reaches UnicodeDecodeError."""
+    bad = b'{"data": ["\xc3\x28"]}'
+    client = scryfall.Client(transport=lambda *a: (200, bad), sleep=lambda _: None)
+    with pytest.raises(ToolError) as caught:
+        client.collection([{"id": "x"}])
+    assert caught.value.error == "scryfall_unparseable"

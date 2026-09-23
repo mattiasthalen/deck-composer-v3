@@ -480,3 +480,116 @@ def test_a_table_within_budget_names_nothing(card_facts: CardFacts) -> None:
     deck = deck_text("d", [ZORALINE], ["1 Swamp"])
     metrics = check_module.check(table(deck), card_facts, RULES, TARGETS).metrics
     assert metrics["overcommitted"] == []
+
+
+# --- findings from the review of PR #1 ------------------------------------
+
+
+def _without(facts: CardFacts, name: str) -> CardFacts:
+    """The card facts after trading away every copy of `name` and refreshing.
+
+    ADR-0011 keeps a card the project has seen at `owned` zero, so a basic the
+    owner has run out of is still in the card facts; it is not unknown.
+    """
+    import dataclasses
+
+    return dataclasses.replace(
+        facts,
+        cards=tuple(
+            dataclasses.replace(e, owned=0, owned_by_printing=tuple(0 for _ in e.owned_by_printing))
+            if e.card.name == name
+            else e
+            for e in facts.cards
+        ),
+    )
+
+
+def test_a_checkpoint_never_certifies_the_table(card_facts: CardFacts) -> None:
+    """`passed` is withheld at a checkpoint; `next` must not say it in prose.
+
+    It said "No violations. Render the decklists" before any deck existed —
+    gen 1's false green in a different field.
+    """
+    report = checkpoint(card_facts, [ZORALINE_NAME], RULES, TARGETS)
+    assert "passed" not in report
+    assert "No violations" not in report["next"]
+    assert "Render" not in report["next"]
+    assert "checkpoint" in report["next"]
+
+
+def test_a_checkpoint_counts_violations_at_unbuilt_seats(card_facts: CardFacts) -> None:
+    """An ineligible commander is a violation even while its deck is unbuilt."""
+    report = checkpoint(card_facts, ["Feed the Cycle"], RULES, TARGETS)
+    assert report["decks"][0]["violations"][0]["violation"] == "commander_ineligible"
+    assert report["next"].startswith("1 violation")
+
+
+def test_a_part_built_table_is_not_certified(card_facts: CardFacts) -> None:
+    """Clean built seats must still not produce "render the decklists".
+
+    The built seat is made clean on purpose: a seat with violations of its own
+    makes `next` report them, which never reaches the false green at all.
+    """
+    import dataclasses
+
+    deck = deck_text("d", [ZORALINE], ["1 Plains"])
+    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
+    clean = dataclasses.replace(
+        report,
+        violations=(),
+        decks=tuple(dataclasses.replace(d, violations=()) for d in report.decks),
+    )
+    assert clean.passed is False
+    assert "Render" not in clean.to_dict()["next"]
+    assert "unbuilt" in clean.to_dict()["next"]
+
+
+def test_an_empty_table_does_not_pass_vacuously(card_facts: CardFacts) -> None:
+    assert check_module.check((), card_facts, RULES, TARGETS, pending=[WICK]).passed is False
+
+
+def test_a_basic_owned_at_zero_keeps_its_row(card_facts: CardFacts) -> None:
+    """The row that vanished was the one the basic budget exists to show.
+
+    With no Swamps owned, a black seat's demand was charged nowhere: no Swamp
+    row and nothing overcommitted, on the table ADR-0005 makes load-bearing.
+    """
+    facts = _without(card_facts, "Swamp")
+    metrics = checkpoint(facts, [ZORALINE_NAME], RULES, TARGETS)["table"]["metrics"]
+    swamp = metrics["basic_budget"]["Swamp"]
+    assert swamp["owned"] == 0
+    assert swamp["unbuilt_estimate"] > 0
+    assert swamp["remaining"] < 0
+    assert "Swamp" in metrics["overcommitted"]
+
+
+def test_a_built_deck_is_charged_for_a_basic_owned_at_zero(card_facts: CardFacts) -> None:
+    facts = _without(card_facts, "Swamp")
+    report = check_module.check(
+        table(deck_text("d", [ZORALINE], ["18 Swamp"])), facts, RULES, TARGETS
+    )
+    assert report.metrics["basic_budget"]["Swamp"] == {
+        "owned": 0,
+        "used": 18,
+        "remaining": -18,
+        "estimated_used": 18,
+        "divergence": 0,
+    }
+    assert "Swamp" in report.metrics["overcommitted"]
+    assert any(v.code == "ownership" for v in report.violations)
+
+
+def test_the_budget_always_carries_the_five_basics(card_facts: CardFacts) -> None:
+    for facts in (card_facts, _without(card_facts, "Island")):
+        budget = checkpoint(facts, [ZORALINE_NAME], RULES, TARGETS)["table"]["metrics"][
+            "basic_budget"
+        ]
+        assert {"Plains", "Island", "Swamp", "Mountain", "Forest"} <= set(budget)
+
+
+def test_one_basic_on_two_lines_is_summed(card_facts: CardFacts) -> None:
+    """Keyed by name, the second line overwrote the first: Forest 15 beside lands 35."""
+    text = deck_text("d", [ZORALINE], ["20 Forest (FDN) 280", "15 Forest"])
+    metrics = one(text, card_facts).decks[0].metrics
+    assert metrics["basics"] == {"Forest": 35}
+    assert sum(metrics["basics"].values()) == metrics["lands"]

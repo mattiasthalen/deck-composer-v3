@@ -80,7 +80,17 @@ class TableReport:
 
     @property
     def passed(self) -> bool:
-        return not self.violations and all(deck.passed for deck in self.decks)
+        """False while any seat is unbuilt: an empty table must not pass vacuously."""
+        return not self.seats and self.violation_count == 0
+
+    @property
+    def violation_count(self) -> int:
+        """Every violation at the table, including commanders at unbuilt seats."""
+        return (
+            len(self.violations)
+            + sum(len(deck.violations) for deck in self.decks)
+            + sum(len(seat["violations"]) for seat in self.seats)
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -106,15 +116,37 @@ class TableReport:
         }
 
     def _next(self) -> str:
-        if self.passed:
+        """Says what this stage of the table is for, and never certifies more.
+
+        `passed` is withheld while a seat is unbuilt, and this sentence must not
+        say in prose what that field refuses to: a checkpoint told "no violations,
+        render the decklists" is gen 1's false green in a different field.
+        """
+        if self.violation_count:
             return (
-                "No violations. Render the decklists, then write the playbooks from these metrics."
+                f"{self.violation_count} violation(s). Fix them and run check again; "
+                "artifacts stay blocked until clean."
             )
-        count = len(self.violations) + sum(len(d.violations) for d in self.decks)
-        return (
-            f"{count} violation(s). Fix them and run check again; "
-            "artifacts stay blocked until clean."
+        short = self.metrics.get("overcommitted") or []
+        warning = (
+            f" The table is on course to run out of {', '.join(short)}; "
+            "adjust before building further."
+            if short
+            else ""
         )
+        if self.seats and not self.decks:
+            return (
+                "This is the checkpoint: no deck exists yet, so nothing is certified. "
+                "Pick the commanders, then build the seat with the largest claim on "
+                "the scarcest basic first (ADR-0005)." + warning
+            )
+        if self.seats:
+            return (
+                f"The built seats are clean; {len(self.seats)} seat(s) are unbuilt, so "
+                "the table is not. Build the next seat and run check again with the "
+                "rest passed as --commander." + warning
+            )
+        return "No violations. Render the decklists, then write the playbooks from these metrics."
 
 
 # --- card lookups -----------------------------------------------------------
@@ -458,11 +490,7 @@ def _deck_metrics(
         "size": built.deck.size,
         "lands": lands_total,
         "lands_target": _target_only(targets.of("lands")),
-        "basics": {
-            card.card.name: entry.quantity
-            for entry, card in sorted(lands, key=lambda p: p[1].card.name)
-            if is_basic(card)
-        },
+        "basics": _basics_by_name(lands),
         "nonbasic_lands": sum(e.quantity for e, c in lands if not is_basic(c)),
         "creatures": creatures,
         "average_mana_value": average,
@@ -473,6 +501,19 @@ def _deck_metrics(
         "tribal_core": tribes,
         "maybeboard": sum(entry.quantity for entry in built.deck.maybeboard),
     }
+
+
+def _basics_by_name(lands: Sequence[tuple[Entry, OwnedCard]]) -> dict[str, int]:
+    """Summed, never overwritten: a list may carry one basic on several lines.
+
+    The composer writes basics bare, one line per name, but a hand-edited or
+    imported list need not — `20 Forest (FDN) 280` and `15 Forest` are 35 Forests.
+    """
+    totals: dict[str, int] = {}
+    for entry, card in lands:
+        if is_basic(card):
+            totals[card.card.name] = totals.get(card.card.name, 0) + entry.quantity
+    return dict(sorted(totals.items()))
 
 
 def _with_context(count: int | None, target: dict[str, float] | None, limit: int) -> dict[str, Any]:
@@ -542,14 +583,21 @@ def _table_metrics(
     reports: Sequence[DeckReport],
     seats: Sequence[dict[str, Any]] = (),
 ) -> dict[str, Any]:
-    basics: dict[str, dict[str, Any]] = {}
+    # Every colour's basic is a row, owned or not. A basic owned at zero is the
+    # most important row in this table — trade away the last Swamp and it is the
+    # one a black seat will overrun — so it can never be the row that vanishes
+    # (ADR-0005). Any other basic enters when owned or when a deck uses it.
+    basics: dict[str, dict[str, Any]] = {
+        name: {"owned": _owned(facts, name), "used": 0} for name in BASIC_FOR_COLOR.values()
+    }
     for entry in facts.cards:
         if is_basic(entry) and entry.owned:
-            basics[entry.card.name] = {"owned": entry.owned, "used": 0}
+            basics.setdefault(entry.card.name, {"owned": entry.owned, "used": 0})
     for deck in built:
         for entry, card in deck.cards:
-            if is_basic(card) and card.card.name in basics:
-                basics[card.card.name]["used"] += entry.quantity
+            if is_basic(card):
+                block = basics.setdefault(card.card.name, {"owned": card.owned, "used": 0})
+                block["used"] += entry.quantity
 
     # The commanders were picked partly on the checkpoint's estimate, which no
     # list has to honour. Built seats are measured; unbuilt ones can only be
@@ -592,6 +640,11 @@ def _table_metrics(
         }
         metrics["spread"] = _spread(reports)
     return metrics
+
+
+def _owned(facts: CardFacts, name: str) -> int:
+    entry = facts.card(name)
+    return entry.owned if entry else 0
 
 
 def _basis(measured: bool, estimated: bool) -> str:
@@ -680,30 +733,3 @@ def _estimated_demand(identities: Sequence[Sequence[str]]) -> dict[str, int]:
         for colour in identity:
             demand[colour] += share
     return {BASIC_FOR_COLOR[colour]: round(amount) for colour, amount in demand.items()}
-
-
-def _headroom(facts: CardFacts, identities: Sequence[Sequence[str]]) -> dict[str, Any]:
-    """Basics are the only contended resource here, so say how tight the set is.
-
-    Demand assumes an even split of a deck's lands across its colours, which no
-    real deck has. It is a headroom estimate for choosing commanders; `check`
-    computes the real figure from the actual lists.
-    """
-    owned = {
-        name: (entry.owned if (entry := facts.card(name)) else 0)
-        for name in BASIC_FOR_COLOR.values()
-    }
-    demand = _estimated_demand(identities)
-    return {
-        "decks": len(identities),
-        "basis": f"estimated: {_ESTIMATE_BASIS}",
-        "basic_budget": {
-            BASIC_FOR_COLOR[colour]: {
-                "owned": owned[BASIC_FOR_COLOR[colour]],
-                "used": demand[BASIC_FOR_COLOR[colour]],
-                "remaining": owned[BASIC_FOR_COLOR[colour]] - demand[BASIC_FOR_COLOR[colour]],
-            }
-            for colour in COLOR_ORDER
-            if demand[BASIC_FOR_COLOR[colour]] or owned[BASIC_FOR_COLOR[colour]]
-        },
-    }
