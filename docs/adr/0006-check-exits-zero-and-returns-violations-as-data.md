@@ -14,7 +14,11 @@ and a table without one are both successful runs.
 
 **Exit 1 is reserved for contract failure:** an unreadable or malformed deck file,
 an unknown schema version, a card name absent from the card facts, more than four
-seats, or the same deck given twice. Fewer than four seats is not a failure — a
+seats, the same deck given twice, or the same commander declared twice across the
+built decks and `--commander`. Seats are counted distinct: a commander that is
+both a built deck and a declared seat is one seat, and a table that reaches four
+only by counting it twice is a short table that would otherwise pass as complete
+and name the built seat as the next to build. Fewer than four seats is not a failure — a
 part-built table is a defined state and the output says which seats are missing —
 but a table of five is not a table, and there is no output that would be correct
 for it.
