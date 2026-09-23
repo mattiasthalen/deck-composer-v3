@@ -78,8 +78,17 @@ three-colour seat is built, the two-colour seats claiming the same basic tie eve
 time. That break is arbitrary and the rule says so; what it must not be is the
 composer's input order, which would let the order a list was written in steer a
 tool decision. The whole `scarcest_basic` block is order-invariant for the same
-reason. Building the named seat first turns the least reliable estimate at the
-table into a measurement while three decks are still unbuilt.
+reason.
+
+The block records which clause decided — colours, claim or name — and the `next`
+sentence renders its reason from that field. A seat that won on the name break is
+not described as the least reliable estimate; the prose says the break was
+arbitrary, because it was. This is the verdict rule of
+[ADR-0006](0006-check-exits-zero-and-returns-violations-as-data.md) applied to
+reasons: the output never claims a reason that did not decide.
+
+Building the named seat first turns the least reliable estimate at the table into
+a measurement while three decks are still unbuilt.
 
 Rejected: building the seat with the largest point-estimate claim first. Under an
 even split a two-colour black seat claims about 18 Swamps and a three-colour one
