@@ -66,14 +66,20 @@ measured, less estimated for the unbuilt seats — not the one least owned; 39 o
 Plains claimed is scarcer than 10 of 38 Swamps. Among the seats claiming it, the
 first built is the one with the most colours, because an even split errs by about
 ±2 for two colours and by 3 to 6 in the generous direction for three. Ties break
-to the largest claim, and an exact tie on both to the commander name that sorts
-first. That last tie is the common case, not an edge: under an even split, seats
-with the same colour count make the same claim, so once the three-colour seat is
-built the two-colour seats claiming the same basic tie every time. The break is
-arbitrary and the rule says so; what it must not be is the composer's input order,
-which would let the order a list was written in steer a tool decision. Building
-the named seat first turns the least reliable estimate at the table into a
-measurement while three decks are still unbuilt.
+to the largest claim, then to the commander name that sorts first.
+
+The middle clause cannot bind under the even-split estimate. The claim is the land
+floor divided by colour count and nothing else, so seats tied on colours are tied
+on claim, always; the decision goes from colours straight to name. The clause is
+kept because a colour-weighted or absorption-aware estimate would make it live,
+and a test pins that it is not live today so that change is noticed when it
+happens. It follows that the name break is the common case, not an edge: once the
+three-colour seat is built, the two-colour seats claiming the same basic tie every
+time. That break is arbitrary and the rule says so; what it must not be is the
+composer's input order, which would let the order a list was written in steer a
+tool decision. The whole `scarcest_basic` block is order-invariant for the same
+reason. Building the named seat first turns the least reliable estimate at the
+table into a measurement while three decks are still unbuilt.
 
 Rejected: building the seat with the largest point-estimate claim first. Under an
 even split a two-colour black seat claims about 18 Swamps and a three-colour one
