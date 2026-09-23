@@ -838,3 +838,40 @@ def test_a_basic_never_seen_at_all_still_has_its_row(card_facts: CardFacts) -> N
     assert swamp["owned"] == 0
     assert swamp["unbuilt_estimate"] > 0
     assert swamp["remaining"] == -swamp["unbuilt_estimate"]
+
+
+@pytest.mark.parametrize(
+    ("seats", "decided_by", "reason"),
+    [
+        ([("Three", "UBR"), ("Two", "WB")], "colours", "most colours"),
+        ([("Zeta", "WB"), ("Alpha", "WB")], "name", "arbitrary break"),
+    ],
+)
+def test_next_states_the_clause_that_actually_decided_the_seat(
+    seats: list[tuple[str, str]], decided_by: str, reason: str
+) -> None:
+    """A seat that won on the name tie is not the least reliable estimate.
+
+    Saying so would give a reason that did not decide — the claimants were equal.
+    Only a strict win on colours earns "least reliable".
+    """
+    basics = _budget(Swamp=(38, -9), Plains=(40, 5), Island=(49, 30), Mountain=(42, 20))
+    result = check_module.scarcest_basic(basics, [_seat(n, c) for n, c in seats])
+    assert result is not None
+    assert result["decided_by"] == decided_by
+    sentence = check_module._build_order_sentence(result)
+    assert reason in sentence
+    if decided_by != "colours":
+        assert "least reliable" not in sentence
+
+
+def test_the_real_second_seat_is_decided_by_name_and_says_so() -> None:
+    """Once Wick is built, Camellia and Zoraline tie on Swamp; `next` must not
+    call either estimate less reliable than the other."""
+    from deck_composer.facts import read as read_facts
+
+    three = ["Zoraline, Cosmos Caller", "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
+    view = checkpoint(read_facts(REAL_POOL), three, RULES, TARGETS)
+    assert view["table"]["metrics"]["scarcest_basic"]["decided_by"] == "name"
+    assert "least reliable" not in view["next"]
+    assert "arbitrary break" in view["next"]

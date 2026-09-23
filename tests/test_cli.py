@@ -251,22 +251,31 @@ def _passed_paths(payload) -> list[str]:
     return [p for p in _every_key_path(payload) if p == "passed" or p.endswith(".passed")]
 
 
-def test_no_passed_key_at_any_depth_while_a_seat_is_unbuilt(tmp_path, facts_file, capsys) -> None:
-    """Withheld only at the top, `passed` was still a false green one level down.
+def test_a_verdict_is_present_only_when_its_subject_exists_in_full(
+    tmp_path, facts_file, capsys
+) -> None:
+    """ADR-0006: the rule is about the subject, not the depth.
 
-    At a checkpoint `table.passed` was vacuously true and the only `passed` in
-    the payload; at a part-built table each built deck carried one too, although
-    an unbuilt seat may still take the cards it relies on. A suffix match finds
-    every such key at once, so a fourth cannot appear unnoticed.
+    The table's `passed` and `table.passed` need every seat, so at a checkpoint
+    or a part-built table they are absent — both were vacuously true, `all()`
+    over a subject that did not yet exist. A built deck's `passed` is a measured
+    result and stays. Every path in the payload is walked, every list element,
+    so a vacuous verdict anywhere else cannot slip past.
     """
     deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
-    stages = {
-        "checkpoint": ["check", "--commander", "Zoraline, Cosmos Caller"],
-        "part-built": ["check", str(deck), "--commander", "Wick, the Whorled Mind"],
-    }
-    for stage, argv in stages.items():
-        _, out, _ = run([*argv, "--facts", str(facts_file)], capsys)
-        assert _passed_paths(out) == [], f"{stage} carries {_passed_paths(out)}"
+
+    _, point, _ = run(
+        ["check", "--commander", "Zoraline, Cosmos Caller", "--facts", str(facts_file)], capsys
+    )
+    assert _passed_paths(point) == [], "a checkpoint judges nothing that exists"
+
+    _, part, _ = run(
+        ["check", str(deck), "--commander", "Wick, the Whorled Mind", "--facts", str(facts_file)],
+        capsys,
+    )
+    built = [i for i, d in enumerate(part["decks"]) if "deck" in d]  # seats have no deck key
+    assert built == [0]
+    assert _passed_paths(part) == [f"decks[{i}].passed" for i in built]
 
 
 def test_every_passed_key_returns_once_every_seat_is_built(tmp_path, facts_file, capsys) -> None:

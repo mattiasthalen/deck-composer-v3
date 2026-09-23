@@ -28,18 +28,23 @@ and no decks is ADR-0008's checkpoint; one deck and three commanders is
 ADR-0005's scarcest-basic-first build order after its first seat. An unbuilt
 seat is still charged to the basic budget at its estimate, or the first deck
 built looks far cheaper than it is, and `overcommitted` names the basics the
-table is on course to run out of. **While any seat is unbuilt, no key named
-`passed` exists at any depth** — not at the top, not on `table`, not on a built
-deck, which cannot pass while an unbuilt seat may still take the cards it
-relies on. Withheld at the top only, `table.passed` was still vacuously true one
-level down. A test walks every key of the payload for the suffix, so a fourth
-cannot appear unnoticed; renaming one would not help.
+table is on course to run out of. **A verdict is present only when its subject
+exists in full** (ADR-0006) — the rule is about the subject, not the depth. The
+top-level `passed` and `table.passed` need every seat and are absent while one is
+unbuilt; each was vacuously true there, `all()` over nothing. A built deck's
+`passed` judges deck-level rules only, which that deck alone determines, and is
+present once it exists; ownership across the four is `table.passed`'s. A test
+walks every key of the payload, every list element, and asserts exactly which
+`passed` paths exist at each stage.
 
 While any seat is unbuilt, `table.metrics.scarcest_basic` names the basic with
 the least projected headroom among those an unbuilt seat claims, lists its
 claimants, and names the seat ADR-0005 builds first: the claimant with the most
 colours, whose estimate is the least reliable, ties to the largest claim, and an
-exact tie to the commander name that sorts first. `next` renders from it. The
+exact tie to the commander name that sorts first. `decided_by` says which of
+those clauses picked the seat, and `next` renders the reason from it: only a win
+on colours may call the estimate "least reliable", and on the common name tie it
+says the break was arbitrary. The
 middle clause cannot bind under the even-split estimate, where the claim is a
 function of colour count alone; a test pins that, so an estimator that makes it
 live fails there first.

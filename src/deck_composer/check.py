@@ -55,15 +55,19 @@ class DeckReport:
     def passed(self) -> bool:
         return not self.violations
 
-    def to_dict(self, *, certify: bool = True) -> dict[str, Any]:
-        """`certify` is false while any seat at the table is unbuilt: a built deck
-        cannot pass while an unbuilt seat may still take the cards it relies on."""
+    def to_dict(self) -> dict[str, Any]:
+        """A built deck's `passed` is its measured result, present once it exists.
+
+        It judges deck-level rules only, which the deck alone determines. What an
+        unbuilt seat can still change — ownership across the four — is judged by
+        `table.passed`, which is withheld until every seat is built (ADR-0006).
+        """
         return {
             "deck": self.name,
             "path": self.path,
             "commander": list(self.commander),
             "color_identity": list(self.color_identity),
-            **({"passed": self.passed} if certify else {}),
+            "passed": self.passed,
             "violations": [v.to_dict() for v in self.violations],
             "metrics": self.metrics,
         }
@@ -95,10 +99,11 @@ class TableReport:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        # No key named `passed` exists at any depth while a seat is unbuilt. Each
-        # one withheld only at the top was still a false green one level down —
-        # vacuously true at a checkpoint, where it was the only `passed` in the
-        # payload. Renaming would not help: a renamed vacuous true is still one.
+        # A verdict is present only when its subject exists in full (ADR-0006).
+        # The table and its table-level rules need every seat, so both are
+        # withheld while one is unbuilt: `all()` over a subject that does not yet
+        # exist is vacuously true and reads as a pass. A built deck's verdict is
+        # not that, and stays. Renaming a vacuous true would not help.
         certify = not self.seats
         return {
             "bracket": BRACKET,
@@ -110,7 +115,7 @@ class TableReport:
                 "targets_version": self.targets.version,
             },
             **({"passed": self.passed} if certify else {}),
-            "decks": [deck.to_dict(certify=certify) for deck in self.decks] + list(self.seats),
+            "decks": [deck.to_dict() for deck in self.decks] + list(self.seats),
             "table": {
                 # table-level rules only, such as ownership across the four
                 **({"passed": not self.violations} if certify else {}),
@@ -140,13 +145,7 @@ class TableReport:
             else ""
         )
         scarcest = self.metrics.get("scarcest_basic")
-        order = (
-            f" ADR-0005 builds {scarcest['build_first']}'s seat next: of the seats "
-            f"claiming {scarcest['basic']}, the basic with the least headroom, its "
-            "estimate is the least reliable."
-            if scarcest
-            else ""
-        )
+        order = _build_order_sentence(scarcest) if scarcest else ""
         if self.seats and not self.decks:
             return (
                 "This is the checkpoint: no deck exists yet, so nothing is certified. "
@@ -515,6 +514,23 @@ def _deck_metrics(
     }
 
 
+def _build_order_sentence(scarcest: dict[str, Any]) -> str:
+    """The seat to build next, with the reason that actually decided it."""
+    seat, basic = scarcest["build_first"], scarcest["basic"]
+    reason = {
+        "colours": "it has the most colours, so its estimate is the least reliable",
+        "claim": "it ties on colours and has the largest claim",
+        "name": (
+            "the seats claiming it tie on colours and claim, so the arbitrary break "
+            "on commander name decides"
+        ),
+    }[scarcest["decided_by"]]
+    return (
+        f" ADR-0005 builds {seat}'s seat next: {basic} is the basic with the least "
+        f"headroom, and of the seats claiming it {reason}."
+    )
+
+
 def _basics_by_name(lands: Sequence[tuple[Entry, OwnedCard]]) -> dict[str, int]:
     """Summed, never overwritten: a list may carry one basic on several lines.
 
@@ -712,7 +728,24 @@ def scarcest_basic(
         "remaining": basics[basic]["remaining"],
         "claimants": claimants,
         "build_first": first["commander"],
+        "decided_by": _decided_by(first, claimants),
     }
+
+
+def _decided_by(first: dict[str, Any], claimants: Sequence[dict[str, Any]]) -> str:
+    """Which clause of the rule picked the seat, so nothing claims a reason it lacks.
+
+    Only a win on colours means the seat's estimate is the least reliable. A win
+    on the name tie means the claimants were equal and the break was arbitrary,
+    and saying "least reliable" there would state a reason that did not decide.
+    """
+    rivals = [c for c in claimants if c is not first]
+    if all(c["colours"] < first["colours"] for c in rivals):
+        return "colours"
+    level = [c for c in rivals if c["colours"] == first["colours"]]
+    if all(c["estimated"] < first["estimated"] for c in level):
+        return "claim"
+    return "name"
 
 
 def _owned(facts: CardFacts, name: str) -> int:
