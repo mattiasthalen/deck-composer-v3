@@ -47,7 +47,8 @@ verdict withholds.
 
 Every vacuous verdict or reason found in this project so far had the same
 mechanism: `all()` or its equivalent over a collection that was empty — zero
-decks, zero rival claimants, a flag standing in for a seat count. A verdict or
-reason computed over a collection that can be empty is suspect until the empty
-case is handled by name, and a reviewer should read every such site with that in
-mind.
+decks, zero rival claimants, a flag standing in for a seat count. The asymmetry
+is the useful part: `all()` over nothing is true and so certifies; `any()` over
+nothing is false and so does not. A verdict or reason computed by `all()` over a
+collection that can be empty is suspect until the empty case is handled by name,
+and a reviewer should read every such site with that in mind.
