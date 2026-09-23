@@ -785,3 +785,56 @@ def test_violations_come_before_the_next_seat(card_facts: CardFacts) -> None:
 def test_a_finished_table_names_no_seat(card_facts: CardFacts) -> None:
     metrics = one(deck_text("d", [ZORALINE], ["1 Plains"]), card_facts).metrics
     assert "scarcest_basic" not in metrics
+
+
+def _with_card(facts: CardFacts, name: str, type_line: str) -> CardFacts:
+    """The card facts carrying an extra basic the owner once had and traded away."""
+    import dataclasses
+
+    from deck_composer.facts import OwnedCard
+    from deck_composer.scryfall import Card
+
+    card = Card(
+        name=name, oracle_id=f"test-{name}", layout="normal", type_line=type_line,
+        mana_cost=None, cmc=0, colors=(), color_identity=("B",), produced_mana=("B",),
+        oracle_text=None, keywords=(), legality="legal", game_changer=False,
+        edhrec_rank=None, faces=None,
+    )  # fmt: skip
+    extra = OwnedCard(card=card, owned=0, owned_by_printing=())
+    return dataclasses.replace(facts, cards=(*facts.cards, extra))
+
+
+def test_a_basic_outside_the_five_is_charged_when_a_deck_uses_it(card_facts: CardFacts) -> None:
+    """Snow-Covered Swamp is a basic but not one of the five seeded rows.
+
+    Owned at zero, it enters the budget only because a deck uses it; without that
+    a deck's snow basics were charged nowhere, the F2 defect in a corner the five
+    seeded rows do not reach.
+    """
+    facts = _with_card(card_facts, "Snow-Covered Swamp", "Basic Snow Land — Swamp")
+    report = check_module.check(
+        table(deck_text("d", [ZORALINE], ["10 Snow-Covered Swamp"])), facts, RULES, TARGETS
+    )
+    row = report.metrics["basic_budget"]["Snow-Covered Swamp"]
+    assert (row["owned"], row["used"], row["remaining"]) == (0, 10, -10)
+    assert "Snow-Covered Swamp" in report.metrics["overcommitted"]
+
+
+def test_a_basic_never_seen_at_all_still_has_its_row(card_facts: CardFacts) -> None:
+    """The harder half of F2: no entry in the card facts at all, not owned at zero.
+
+    A collection that has never held a Swamp still gets a Swamp row, and a black
+    seat's demand is charged against a supply of zero.
+    """
+    import dataclasses
+
+    facts = dataclasses.replace(
+        card_facts, cards=tuple(e for e in card_facts.cards if e.card.name != "Swamp")
+    )
+    assert facts.card("Swamp") is None
+    swamp = checkpoint(facts, [ZORALINE_NAME], RULES, TARGETS)["table"]["metrics"]["basic_budget"][
+        "Swamp"
+    ]
+    assert swamp["owned"] == 0
+    assert swamp["unbuilt_estimate"] > 0
+    assert swamp["remaining"] == -swamp["unbuilt_estimate"]
