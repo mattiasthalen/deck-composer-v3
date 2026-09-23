@@ -88,8 +88,10 @@ basic budget are properties of the table and are not computable from one list.
   exit 1, nothing on stdout. Usage error: exit 2.
 - **`check` exits 0 whether or not it found violations** (ADR-0006). Violations
   are data. Exit 1 means an unreadable deck file, an unknown schema, a card
-  name the card facts do not carry, more than four seats, or the same deck
-  given twice (ADR-0006). A part-built table is a defined state, not a failure.
+  name the card facts do not carry, more than four seats, the same deck given
+  twice, or the same commander at two seats (ADR-0006). A table is four distinct
+  commanders; a built seat is its deck file and an unbuilt one a `--commander`,
+  never both. A part-built table is a defined state, not a failure.
 - Raise `ToolError(error, detail, next_step)` from `deck_composer.errors`. Every
   failure says what to do next. Never echo a price.
 - A field the design has not settled is **absent** from the output — never null

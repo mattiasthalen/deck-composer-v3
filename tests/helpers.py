@@ -68,3 +68,34 @@ def write_deck(directory: Path, name: str, text: str) -> Path:
     path = directory / f"{name}.deck.txt"
     path.write_text(text, encoding="utf-8")
     return path
+
+
+# The fixture collection holds two legendary creatures, and a table is four
+# distinct commanders (ADR-0008 counts C(23, 3) sets alongside Wick). These
+# stand in for the other seats. White-black, like Zoraline, so the cards the
+# tests put in decks stay inside every seat's identity.
+SEAT_NAMES = ["Zoraline, Cosmos Caller", "Seat Two", "Seat Three", "Seat Four", "Seat Five"]
+SEAT_LINES = ["1 Zoraline, Cosmos Caller (BLB) 242"] + [f"1 {n}" for n in SEAT_NAMES[1:]]
+
+
+def with_seat_commanders(facts):
+    import dataclasses
+
+    from deck_composer.facts import OwnedCard
+    from deck_composer.scryfall import Card
+
+    extra = tuple(
+        OwnedCard(
+            card=Card(
+                name=name, oracle_id=f"test-seat-{name}", layout="normal",
+                type_line="Legendary Creature — Human", mana_cost="{W}{B}", cmc=2,
+                colors=("B", "W"), color_identity=("B", "W"), produced_mana=None,
+                oracle_text=None, keywords=(), legality="legal", game_changer=False,
+                edhrec_rank=None, faces=None,
+            ),
+            owned=1,
+            owned_by_printing=(),
+        )
+        for name in SEAT_NAMES[1:]
+    )  # fmt: skip
+    return dataclasses.replace(facts, cards=(*facts.cards, *extra))

@@ -327,9 +327,13 @@ def check(
     ADR-0005 after its first seat. Both are this table, earlier, so both are
     this object with the deck-dependent fields absent.
 
-    Two inputs have no correct output and are contract failures (ADR-0006): more
-    than four seats, since a table of five is not a table, and the same deck
-    given twice, which would charge every card in it to the budget twice.
+    Three inputs have no correct output and are contract failures (ADR-0006):
+    more than four seats, since a table of five is not a table; the same deck
+    given twice, which would charge every card in it to the budget twice; and the
+    same commander at two seats. A table is four distinct commanders — ADR-0008's
+    1,771 sets alongside Wick are C(23, 3) — and a repeat counts as four seats
+    what is three: a built seat declared again, or one seat named twice, charged
+    twice while a real seat is left out, with the build order named over it.
     """
     paths = [deck.path for deck in decks]
     repeated = sorted({path for path in paths if paths.count(path) > 1})
@@ -347,6 +351,17 @@ def check(
             "commanders between them.",
         )
     built = [_build(deck, facts) for deck in decks]
+    # Resolved names, so a face name cannot slip a repeat past as an alias.
+    commanders = [entry.card.name for b in built for entry in b.commander]
+    commanders += [resolve(facts, name, where="seat").card.name for name in pending]
+    repeated_commanders = sorted({n for n in commanders if commanders.count(n) > 1})
+    if repeated_commanders:
+        raise ToolError(
+            "commander_given_twice",
+            {"commanders": repeated_commanders},
+            "Give each commander once: a built seat is its deck file, an unbuilt one a "
+            "--commander, never both, and a table is four distinct commanders.",
+        )
     ceilings: dict[tuple[str, tuple[str, ...]], int] = {}
     reports = tuple(_deck_report(entry, facts, rules, targets, ceilings) for entry in built)
     seats = tuple(
