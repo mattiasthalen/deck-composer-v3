@@ -13,7 +13,11 @@ with violations is the normal state of a deck being built, not an error.
 and a table without one are both successful runs.
 
 **Exit 1 is reserved for contract failure:** an unreadable or malformed deck file,
-an unknown schema version, or a card name absent from the card facts.
+an unknown schema version, a card name absent from the card facts, more than four
+seats, or the same deck given twice. Fewer than four seats is not a failure — a
+part-built table is a defined state and the output says which seats are missing —
+but a table of five is not a table, and there is no output that would be correct
+for it.
 
 Rejected: a distinct exit code for "violations found". It widens the contract of
 the tool for a caller that reads the JSON either way, and every future caller then
@@ -30,8 +34,9 @@ violation, which keeps name resolution out of `check` and in the operation that
 writes the card facts.
 
 **A verdict field is present only when the thing it judges exists in full.** The
-table's `passed` and the table-level `passed` need all four seats and are absent
-until then; a deck's `passed` needs that deck and is present once it is built. A
+table's `passed` and the table-level `passed` need exactly four decks, all built,
+and are absent until then — counted, not inferred from which flags were passed; a
+deck's `passed` needs that deck and is present once it is built. A
 `passed: true` whose subject does not yet exist is vacuously true — `all()` over
 nothing — and reads as a pass. Gen 1 shipped that shape and it was caught by hand.
 The rule is about the subject, not the depth: dropping every `passed` at a
