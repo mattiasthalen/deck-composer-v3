@@ -39,3 +39,10 @@ part-built table would discard a built deck's real result to remove a vacuous on
 and a consumer would then have to derive legality from an empty `violations` list.
 The `next` sentence follows the same rule and never certifies what a withheld
 verdict withholds.
+
+Every vacuous verdict or reason found in this project so far had the same
+mechanism: `all()` or its equivalent over a collection that was empty — zero
+decks, zero rival claimants, a flag standing in for a seat count. A verdict or
+reason computed over a collection that can be empty is suspect until the empty
+case is handled by name, and a reviewer should read every such site with that in
+mind.
