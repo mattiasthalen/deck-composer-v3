@@ -21,6 +21,14 @@ def facts_file(tmp_path: Path, card_facts) -> Path:
     return path
 
 
+def four_decks(tmp_path: Path, mainboard: list[str]) -> list[str]:
+    """A whole table: the lexicon's table is four decks, and only four is certified."""
+    return [
+        str(write_deck(tmp_path, f"d{n}", deck_text(f"d{n}", [ZORALINE], mainboard)))
+        for n in range(4)
+    ]
+
+
 def run(argv: list[str], capsys) -> tuple[int, dict, dict]:
     code = cli.main(argv)
     captured = capsys.readouterr()
@@ -34,8 +42,8 @@ def run(argv: list[str], capsys) -> tuple[int, dict, dict]:
 
 def test_check_exits_zero_with_violations_in_the_output(tmp_path, facts_file, capsys) -> None:
     """ADR-0006: a deck with violations is a successful run."""
-    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["4 Uncharted Haven"]))
-    code, out, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
+    decks = four_decks(tmp_path, ["4 Uncharted Haven"])
+    code, out, _ = run(["check", *decks, "--facts", str(facts_file)], capsys)
     assert code == 0
     assert out["passed"] is False
     assert any(v["violation"] == "singleton" for v in out["decks"][0]["violations"])
@@ -167,7 +175,9 @@ def test_the_checkpoint_is_the_same_object_with_fields_absent(tmp_path, facts_fi
     composer.
     """
     deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
-    _, full, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
+    _, full, _ = run(
+        ["check", *four_decks(tmp_path, ["1 Plains"]), "--facts", str(facts_file)], capsys
+    )
     # A part-built table is also a run over real decks, and it is the stage that
     # carries seat-dependent facts such as the scarcest basic. The checkpoint may
     # produce nothing that no stage with decks can produce.
@@ -279,7 +289,38 @@ def test_a_verdict_is_present_only_when_its_subject_exists_in_full(
 
 
 def test_every_passed_key_returns_once_every_seat_is_built(tmp_path, facts_file, capsys) -> None:
-    """Both mean what they say again: the table verdict, and table-level rules."""
-    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
-    _, out, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
-    assert _passed_paths(out) == ["passed", "decks[0].passed", "table.passed"]
+    """With all four seats built, every verdict is back and means what it says."""
+    _, out, _ = run(
+        ["check", *four_decks(tmp_path, ["1 Plains"]), "--facts", str(facts_file)], capsys
+    )
+    assert _passed_paths(out) == [
+        "passed",
+        "decks[0].passed",
+        "decks[1].passed",
+        "decks[2].passed",
+        "decks[3].passed",
+        "table.passed",
+    ]
+
+
+@pytest.mark.parametrize("count", [1, 2, 3])
+def test_fewer_than_four_decks_is_not_a_table(tmp_path, facts_file, capsys, count: int) -> None:
+    """`check` on one deck alone was certified as a finished table.
+
+    No seat was declared, so none looked unbuilt: `passed`, `table.passed` and
+    "render the decklists" on a quarter of a table, and the missing seats charged
+    nothing against the basic budget — the first deck looks cheap, which is what
+    ADR-0005 builds the scarcest basic first to prevent. Each built deck keeps its
+    own verdict; only the table's are withheld, and `next` asks for the rest.
+    """
+    decks = four_decks(tmp_path, ["1 Plains"])[:count]
+    _, out, _ = run(["check", *decks, "--facts", str(facts_file)], capsys)
+    assert _passed_paths(out) == [f"decks[{i}].passed" for i in range(count)]
+    assert "render" not in out["next"].lower()
+
+
+def test_more_than_four_decks_is_not_a_table(tmp_path, facts_file, capsys) -> None:
+    decks = four_decks(tmp_path, ["1 Plains"])
+    decks.append(str(write_deck(tmp_path, "d4", deck_text("d4", [ZORALINE], ["1 Plains"]))))
+    _, out, _ = run(["check", *decks, "--facts", str(facts_file)], capsys)
+    assert "passed" not in out and "passed" not in out["table"]

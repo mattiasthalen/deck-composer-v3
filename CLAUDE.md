@@ -31,7 +31,11 @@ built looks far cheaper than it is, and `overcommitted` names the basics the
 table is on course to run out of. **A verdict is present only when its subject
 exists in full** (ADR-0006) — the rule is about the subject, not the depth. The
 top-level `passed` and `table.passed` need every seat and are absent while one is
-unbuilt; each was vacuously true there, `all()` over nothing. A built deck's
+unbuilt; each was vacuously true there, `all()` over nothing. "Every seat" means
+**four decks**, the lexicon's table, not "no seat declared": `check` on one deck
+alone declares no seat and was certified as a finished table, with the missing
+three charged nothing against the basic budget. Fewer or more than four built
+decks certifies nothing, and `next` asks for the missing seats as `--commander`. A built deck's
 `passed` judges deck-level rules only, which that deck alone determines, and is
 present once it exists; ownership across the four is `table.passed`'s. A test
 walks every key of the payload, every list element, and asserts exactly which

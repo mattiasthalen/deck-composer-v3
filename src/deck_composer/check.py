@@ -23,6 +23,7 @@ from deck_composer.rules import Category, Rules, Targets, searchable
 
 DECK_SIZE = 100
 LAND_FLOOR = 35
+TABLE_SIZE = 4  # the lexicon's table is four decks
 BRACKET = 2
 GAME_CHANGER_CAP = 0
 COLOR_ORDER = "WUBRG"
@@ -87,7 +88,18 @@ class TableReport:
     @property
     def passed(self) -> bool:
         """False while any seat is unbuilt: an empty table must not pass vacuously."""
-        return not self.seats and self.violation_count == 0
+        return self.complete and self.violation_count == 0
+
+    @property
+    def complete(self) -> bool:
+        """Every seat of a table is built: four decks and no seat still a commander.
+
+        Counting only the seats passed as --commander was not enough. `check` on
+        one deck alone declares no seat, and was certified as a finished table —
+        `passed`, `table.passed` and "render the decklists" on a quarter of one,
+        with the three missing seats charged nothing against the basic budget.
+        """
+        return not self.seats and len(self.decks) == TABLE_SIZE
 
     @property
     def violation_count(self) -> int:
@@ -104,7 +116,7 @@ class TableReport:
         # withheld while one is unbuilt: `all()` over a subject that does not yet
         # exist is vacuously true and reads as a pass. A built deck's verdict is
         # not that, and stays. Renaming a vacuous true would not help.
-        certify = not self.seats
+        certify = self.complete
         return {
             "bracket": BRACKET,
             "snapshot": {
@@ -156,6 +168,19 @@ class TableReport:
                 f"The built seats are clean, but {len(self.seats)} seat(s) are unbuilt, so "
                 "the table is not certified. Run check again after each seat, with the "
                 "rest passed as --commander." + order + warning
+            )
+        if not self.complete:
+            given = len(self.decks)
+            if given > TABLE_SIZE:
+                return (
+                    f"{given} decks were given and a table is {TABLE_SIZE}, so nothing is "
+                    "certified. Check the four that form the table."
+                )
+            return (
+                f"{given} of the table's {TABLE_SIZE} seats are here and the rest were not "
+                "declared, so nothing is certified and the basic budget charges the "
+                "missing seats nothing. Pass them as --commander so the budget spans "
+                "the whole table."
             )
         return "No violations. Render the decklists, then write the playbooks from these metrics."
 

@@ -640,8 +640,17 @@ def test_a_tie_on_colours_is_always_a_tie_on_claim_today() -> None:
     fails here, and that clause gets a test of its own rather than borrowing
     this one's name.
     """
-    two_colour = [("W", "B"), ("B", "G"), ("U", "B"), ("B", "R")]
-    assert len({check_module._estimated_demand([i])["Swamp"] for i in two_colour}) == 1
+    from itertools import combinations
+
+    # Every colour count against every basic, not one sample: a weighting that
+    # moved only three-colour claims (WUB 9 Swamps against BRG 18) would make the
+    # clause live while a two-colour-only pin kept passing.
+    for count in range(1, 6):
+        claims = set()
+        for identity in combinations("WUBRG", count):
+            demand = check_module._estimated_demand([identity])
+            claims |= {demand[check_module.BASIC_FOR_COLOR[c]] for c in identity}
+        assert len(claims) == 1, f"{count}-colour seats make unequal claims: {sorted(claims)}"
     basics = _budget(Swamp=(38, -20), Plains=(40, 20), Forest=(54, 36))
     result = check_module.scarcest_basic(basics, [_seat("Two", "WB"), _seat("Other two", "BG")])
     assert result is not None
@@ -875,3 +884,47 @@ def test_the_real_second_seat_is_decided_by_name_and_says_so() -> None:
     assert view["table"]["metrics"]["scarcest_basic"]["decided_by"] == "name"
     assert "least reliable" not in view["next"]
     assert "arbitrary break" in view["next"]
+
+
+def _clean(report):
+    """The same report with every violation cleared, to reach the sentence under test.
+
+    `next` reports violations before anything else, rightly, so a test whose
+    fixture deck has violations of its own never reaches the sentence it means to
+    check. That made three tests vacuous before this helper existed.
+    """
+    import dataclasses
+
+    return dataclasses.replace(
+        report,
+        violations=(),
+        decks=tuple(dataclasses.replace(d, violations=()) for d in report.decks),
+        seats=tuple({**s, "violations": []} for s in report.seats),
+    )
+
+
+@pytest.mark.parametrize("count", [1, 2, 3])
+def test_a_short_table_asks_for_the_missing_seats(card_facts: CardFacts, count: int) -> None:
+    """Clean decks, but fewer than four and none declared: nothing is certified,
+    and `next` says the budget is charging the missing seats nothing."""
+    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(count)]
+    report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
+    assert report.complete is False and report.passed is False
+    sentence = report.to_dict()["next"]
+    assert f"{count} of the table's 4 seats" in sentence
+    assert "--commander" in sentence
+    assert "render" not in sentence.lower()
+
+
+def test_five_decks_is_not_a_table(card_facts: CardFacts) -> None:
+    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(5)]
+    report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
+    assert report.passed is False
+    assert "a table is 4" in report.to_dict()["next"]
+
+
+def test_only_a_complete_clean_table_says_render(card_facts: CardFacts) -> None:
+    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(4)]
+    report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
+    assert report.complete and report.passed
+    assert "Render the decklists" in report.to_dict()["next"]
