@@ -669,8 +669,13 @@ def scarcest_basic(
     The seat built first is the claimant with the most colours, because an even
     split errs by about 2 for two colours and by 3 to 6 in the generous
     direction for three: it is the least reliable estimate, the one worth
-    turning into a measurement. Ties break to the largest claim, then to the
-    seat given first, so the order stays the composer's input.
+    turning into a measurement. Ties break to the largest claim, and an exact
+    tie on both to the commander name that sorts first. That last tie is the
+    common case — seats with the same colour count make the same claim, so once
+    the three-colour seat is built the two-colour ones tie every time — and the
+    break is arbitrary. What it must not be is the order the composer listed the
+    seats in, which would let the writing of a list steer a tool decision; so
+    nothing in this block depends on input order, the claimants included.
 
     The rejected rule built the largest claim first. Under an even split a
     two-colour seat out-claims a three-colour one, so it never built the
@@ -688,12 +693,15 @@ def scarcest_basic(
     if not claimed:
         return None
     basic = min(claimed, key=lambda name: (basics[name]["remaining"], basics[name]["owned"], name))
-    claimants = [
-        {"commander": c["commander"], "colours": c["colours"], "estimated": c["demand"][basic]}
-        for c in claims
-        if c["demand"].get(basic, 0)
-    ]
-    first = max(claimants, key=lambda c: (c["colours"], c["estimated"]))  # max keeps the first
+    claimants = sorted(
+        (
+            {"commander": c["commander"], "colours": c["colours"], "estimated": c["demand"][basic]}
+            for c in claims
+            if c["demand"].get(basic, 0)
+        ),
+        key=lambda c: c["commander"],
+    )
+    first = min(claimants, key=lambda c: (-c["colours"], -c["estimated"], c["commander"]))
     return {
         "basic": basic,
         "remaining": basics[basic]["remaining"],
