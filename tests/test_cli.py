@@ -319,8 +319,19 @@ def test_fewer_than_four_decks_is_not_a_table(tmp_path, facts_file, capsys, coun
     assert "render" not in out["next"].lower()
 
 
-def test_more_than_four_decks_is_not_a_table(tmp_path, facts_file, capsys) -> None:
+def test_more_than_four_seats_exits_one_with_json(tmp_path, facts_file, capsys) -> None:
+    """ADR-0006: exit 1, one JSON object on stderr, nothing on stdout."""
     decks = four_decks(tmp_path, ["1 Plains"])
     decks.append(str(write_deck(tmp_path, "d4", deck_text("d4", [ZORALINE], ["1 Plains"]))))
-    _, out, _ = run(["check", *decks, "--facts", str(facts_file)], capsys)
-    assert "passed" not in out and "passed" not in out["table"]
+    code, out, err = run(["check", *decks, "--facts", str(facts_file)], capsys)
+    assert code == 1
+    assert out == {}
+    assert err["error"] == "too_many_seats" and err["next"]
+
+
+def test_the_same_deck_given_twice_exits_one(tmp_path, facts_file, capsys) -> None:
+    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
+    code, out, err = run(["check", str(deck), str(deck), "--facts", str(facts_file)], capsys)
+    assert code == 1
+    assert out == {}
+    assert err["error"] == "deck_given_twice"

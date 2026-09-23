@@ -689,17 +689,24 @@ def test_nothing_in_the_seat_block_depends_on_input_order() -> None:
 
 
 def test_the_tie_that_decides_the_second_seat_here_is_broken_by_name() -> None:
-    """The three seats left once Wick is built: Camellia and Zoraline tie on Swamp.
+    """Wick built, three seats left: Camellia and Zoraline tie on Swamp.
 
-    Against the real collection, two colours each, about 18 Swamps each — the
-    tie is the common case, so this is the break that picks the second seat.
+    Against the real collection, two colours each, about 18 Swamps each — the tie
+    is the common case once the three-colour seat exists, so this is the break
+    that picks the second seat. All four seats are declared, as the build order
+    requires (ADR-0005).
     """
     from deck_composer.facts import read as read_facts
 
     facts = read_facts(REAL_POOL)
+    wick = parse_deck(
+        "// schema: 1\n// Commander\n1 Wick, the Whorled Mind (BLB) 120\n// Mainboard\n10 Swamp\n",
+        path="wick.deck.txt",
+    )
     three = ["Zoraline, Cosmos Caller", "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
     for order in (three, list(reversed(three))):
-        scarcest = checkpoint(facts, order, RULES, TARGETS)["table"]["metrics"]["scarcest_basic"]
+        report = check_module.check([wick], facts, RULES, TARGETS, pending=order)
+        scarcest = report.metrics["scarcest_basic"]
         assert scarcest["basic"] == "Swamp"
         assert {c["commander"] for c in scarcest["claimants"]} == {
             "Camellia, the Seedmiser",
@@ -765,27 +772,29 @@ def test_wick_is_built_first_at_this_table_for_the_stated_reason(
     assert WICK in view["next"]
 
 
-def test_a_part_built_table_names_the_next_seat(card_facts: CardFacts) -> None:
-    """With the built seat clean: violations come first in `next`, rightly, so a
-    seat carrying its own would never reach the sentence that names the next one.
+def test_a_part_built_table_names_the_next_seat() -> None:
+    """All four seats declared, one built: the build order names the next seat.
+
+    With the built seat clean, since violations come first in `next`, rightly.
     """
-    import dataclasses
+    from deck_composer.facts import read as read_facts
 
     deck = deck_text("d", [ZORALINE], ["1 Plains"])
-    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
-    clean = dataclasses.replace(
-        report,
-        violations=(),
-        decks=tuple(dataclasses.replace(d, violations=()) for d in report.decks),
+    pending = [WICK, "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
+    report = _clean(
+        check_module.check(table(deck), read_facts(REAL_POOL), RULES, TARGETS, pending=pending)
     )
-    assert clean.metrics["scarcest_basic"]["build_first"] == WICK
-    assert WICK in clean.to_dict()["next"]
+    assert report.metrics["scarcest_basic"]["build_first"] == WICK
+    assert WICK in report.to_dict()["next"]
 
 
-def test_violations_come_before_the_next_seat(card_facts: CardFacts) -> None:
+def test_violations_come_before_the_next_seat() -> None:
     """Fixing what is built outranks building more; the seat stays in the metrics."""
+    from deck_composer.facts import read as read_facts
+
     deck = deck_text("d", [ZORALINE], ["1 Plains"])
-    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK])
+    pending = [WICK, "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
+    report = check_module.check(table(deck), read_facts(REAL_POOL), RULES, TARGETS, pending=pending)
     assert report.violation_count
     assert report.to_dict()["next"].startswith(f"{report.violation_count} violation")
     assert report.metrics["scarcest_basic"]["build_first"] == WICK
@@ -875,15 +884,22 @@ def test_next_states_the_clause_that_actually_decided_the_seat(
 
 
 def test_the_real_second_seat_is_decided_by_name_and_says_so() -> None:
-    """Once Wick is built, Camellia and Zoraline tie on Swamp; `next` must not
-    call either estimate less reliable than the other."""
+    """With Wick built, Camellia and Zoraline tie on Swamp; `next` must not call
+    either estimate less reliable than the other."""
     from deck_composer.facts import read as read_facts
 
+    wick = parse_deck(
+        "// schema: 1\n// Commander\n1 Wick, the Whorled Mind (BLB) 120\n// Mainboard\n10 Swamp\n",
+        path="wick.deck.txt",
+    )
     three = ["Zoraline, Cosmos Caller", "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
-    view = checkpoint(read_facts(REAL_POOL), three, RULES, TARGETS)
-    assert view["table"]["metrics"]["scarcest_basic"]["decided_by"] == "name"
-    assert "least reliable" not in view["next"]
-    assert "arbitrary break" in view["next"]
+    report = _clean(
+        check_module.check([wick], read_facts(REAL_POOL), RULES, TARGETS, pending=three)
+    )
+    assert report.metrics["scarcest_basic"]["decided_by"] == "name"
+    sentence = report.to_dict()["next"]
+    assert "least reliable" not in sentence
+    assert "arbitrary break" in sentence
 
 
 def _clean(report):
@@ -916,11 +932,16 @@ def test_a_short_table_asks_for_the_missing_seats(card_facts: CardFacts, count: 
     assert "render" not in sentence.lower()
 
 
-def test_five_decks_is_not_a_table(card_facts: CardFacts) -> None:
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(5)]
-    report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
-    assert report.passed is False
-    assert "a table is 4" in report.to_dict()["next"]
+@pytest.mark.parametrize(("decks", "commanders"), [(5, 0), (3, 2), (0, 5), (1, 4)])
+def test_more_than_four_seats_is_a_contract_failure(
+    card_facts: CardFacts, decks: int, commanders: int
+) -> None:
+    """A table of five is not a table, and no output is correct for it (ADR-0006)."""
+    texts = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(decks)]
+    with pytest.raises(ToolError) as caught:
+        check_module.check(table(*texts), card_facts, RULES, TARGETS, pending=[WICK] * commanders)
+    assert caught.value.error == "too_many_seats"
+    assert caught.value.detail["table_size"] == 4
 
 
 def test_only_a_complete_clean_table_says_render(card_facts: CardFacts) -> None:
@@ -985,3 +1006,50 @@ def test_a_fully_declared_table_carries_no_shortfall_warning(card_facts: CardFac
     deck = deck_text("d", [ZORALINE], ["1 Plains"])
     report = _clean(check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK] * 3))
     assert "seats are declared" not in report.to_dict()["next"]
+
+
+def test_the_same_deck_given_twice_is_a_contract_failure(card_facts: CardFacts) -> None:
+    """It would charge every card in it to the budget twice (ADR-0006)."""
+    deck = parse_deck(deck_text("d", [ZORALINE], ["1 Plains"]), path="decks/zoraline.deck.txt")
+    with pytest.raises(ToolError) as caught:
+        check_module.check([deck, deck], card_facts, RULES, TARGETS)
+    assert caught.value.error == "deck_given_twice"
+    assert caught.value.detail["decks"] == ["decks/zoraline.deck.txt"]
+
+
+@pytest.mark.parametrize("seats", [1, 2, 3])
+def test_the_build_order_is_withheld_below_four_declared_seats(seats: int) -> None:
+    """ADR-0005: the argmin is not monotone, so over a short table it can name the
+    wrong seat — two of four declared named Camellia where the four name Wick."""
+    from deck_composer.facts import read as read_facts
+
+    four = [WICK, "Mabel, Heir to Cragflame", "Camellia, the Seedmiser", ZORALINE_NAME]
+    view = checkpoint(read_facts(REAL_POOL), four[:seats], RULES, TARGETS)
+    assert "scarcest_basic" not in view["table"]["metrics"]
+    assert "builds" not in view["next"]
+    assert "build order is withheld" in view["next"]
+
+
+def test_the_budget_bounds_stay_over_a_short_table() -> None:
+    """Adding a seat only adds demand, so a named overrun over part of a table is
+    real; the budget is kept, labelled, where the build order is withheld."""
+    from deck_composer.facts import read as read_facts
+
+    view = checkpoint(
+        read_facts(REAL_POOL),
+        [WICK, "Camellia, the Seedmiser", ZORALINE_NAME],
+        RULES,
+        TARGETS,
+    )
+    metrics = view["table"]["metrics"]
+    assert {"Plains", "Island", "Swamp", "Mountain", "Forest"} <= set(metrics["basic_budget"])
+    assert "Swamp" in metrics["overcommitted"]
+
+
+def test_a_single_commander_checkpoint_names_no_seat() -> None:
+    """One commander has no build order."""
+    from deck_composer.facts import read as read_facts
+
+    view = checkpoint(read_facts(REAL_POOL), ["Alania, Divergent Storm"], RULES, TARGETS)
+    assert "scarcest_basic" not in view["table"]["metrics"]
+    assert "builds" not in view["next"]

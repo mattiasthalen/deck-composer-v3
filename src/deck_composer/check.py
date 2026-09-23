@@ -160,17 +160,14 @@ class TableReport:
         order = _build_order_sentence(scarcest) if scarcest else ""
         declared = len(self.decks) + len(self.seats)
         if declared < TABLE_SIZE:
-            # Adding a seat only adds demand, so over part of the table `remaining`
-            # is an upper bound and a basic named overcommitted really is one —
-            # but an empty list is no evidence, and the scarcest basic and the
-            # seat built first can both change when the rest arrive.
+            # Over part of a table the budget is a sound bound — a named overrun is
+            # real — but an empty list is no evidence, and the build order is
+            # withheld because the scarcest basic can move when the rest arrive.
             warning += (
                 f" Only {declared} of the table's {TABLE_SIZE} seats are declared, so the "
-                "build order and the basic budget cover those alone; an empty "
-                "overcommitted list is not evidence. Pass the rest as --commander."
+                "build order is withheld and the basic budget covers those alone; an "
+                "empty overcommitted list is not evidence. Pass the rest as --commander."
             )
-        elif declared > TABLE_SIZE:
-            warning += f" {declared} seats are declared and a table is {TABLE_SIZE}."
         if self.seats and not self.decks:
             return (
                 "This is the checkpoint: no deck exists yet, so nothing is certified. "
@@ -184,11 +181,6 @@ class TableReport:
             )
         if not self.complete:
             given = len(self.decks)
-            if given > TABLE_SIZE:
-                return (
-                    f"{given} decks were given and a table is {TABLE_SIZE}, so nothing is "
-                    "certified. Check the four that form the table."
-                )
             return (
                 f"{given} of the table's {TABLE_SIZE} seats are here and the rest were not "
                 "declared, so nothing is certified and the basic budget charges the "
@@ -334,7 +326,26 @@ def check(
     deck and three commanders is the scarcest-basic-first build order of
     ADR-0005 after its first seat. Both are this table, earlier, so both are
     this object with the deck-dependent fields absent.
+
+    Two inputs have no correct output and are contract failures (ADR-0006): more
+    than four seats, since a table of five is not a table, and the same deck
+    given twice, which would charge every card in it to the budget twice.
     """
+    paths = [deck.path for deck in decks]
+    repeated = sorted({path for path in paths if paths.count(path) > 1})
+    if repeated:
+        raise ToolError(
+            "deck_given_twice",
+            {"decks": repeated},
+            "Give each deck once; a table is four different decks.",
+        )
+    if len(decks) + len(pending) > TABLE_SIZE:
+        raise ToolError(
+            "too_many_seats",
+            {"decks": len(decks), "commanders": len(pending), "table_size": TABLE_SIZE},
+            f"A table is {TABLE_SIZE} seats; give at most {TABLE_SIZE} decks and "
+            "commanders between them.",
+        )
     built = [_build(deck, facts) for deck in decks]
     ceilings: dict[tuple[str, tuple[str, ...]], int] = {}
     reports = tuple(_deck_report(entry, facts, rules, targets, ceilings) for entry in built)
@@ -702,7 +713,12 @@ def _table_metrics(
         "overcommitted": overcommitted,
         "basic_budget": {name: basics[name] for name in sorted(basics)},
     }
-    scarcest = scarcest_basic(basics, seats)
+    # The build order is withheld until all four seats are declared (ADR-0005).
+    # Adding a seat only adds demand, so the budget over part of a table is a
+    # sound bound and stays; but the scarcest basic is an argmin, not monotone,
+    # and can move to another basic or to a seat not yet declared.
+    declared = len(built) + len(seats)
+    scarcest = scarcest_basic(basics, seats) if declared == TABLE_SIZE else None
     if scarcest is not None:
         metrics["scarcest_basic"] = scarcest
     if built:

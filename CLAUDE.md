@@ -34,14 +34,14 @@ top-level `passed` and `table.passed` need every seat and are absent while one i
 unbuilt; each was vacuously true there, `all()` over nothing. "Every seat" means
 **four decks**, the lexicon's table, not "no seat declared": `check` on one deck
 alone declares no seat and was certified as a finished table, with the missing
-three charged nothing against the basic budget. Fewer or more than four built
-decks certifies nothing, and `next` asks for the missing seats as `--commander`. A built deck's
+three charged nothing against the basic budget. Fewer than four built decks
+certifies nothing, and `next` asks for the missing seats as `--commander`. A built deck's
 `passed` judges deck-level rules only, which that deck alone determines, and is
 present once it exists; ownership across the four is `table.passed`'s. A test
 walks every key of the payload, every list element, and asserts exactly which
 `passed` paths exist at each stage.
 
-While any seat is unbuilt, `table.metrics.scarcest_basic` names the basic with
+While any seat is unbuilt **and all four are declared**, `table.metrics.scarcest_basic` names the basic with
 the least projected headroom among those an unbuilt seat claims, lists its
 claimants, and names the seat ADR-0005 builds first: the claimant with the most
 colours, whose estimate is the least reliable, ties to the largest claim, and an
@@ -62,6 +62,11 @@ identity and projected headroom and chooses nothing about any deck; left to the
 composer it would be a fact the builder derives about its own picks (ADR-0002).
 It is **not** the largest claim: under an even split a two-colour seat out-claims
 a three-colour one, so that rule never builds the three-colour seat first.
+**Below four declared seats the build order is withheld** (ADR-0005). Adding a
+seat only adds demand, so the budget over part of a table is a sound bound — a
+named overrun is real, though an empty list is no evidence — and it stays,
+labelled; but the scarcest basic is an argmin, not monotone, and two of four
+declared named Camellia where all four name Wick.
 
 `check --commander` serves ADR-0008's selection checkpoint and is the same verb
 only while it returns **the same table-shaped object with the deck-dependent
@@ -82,8 +87,9 @@ basic budget are properties of the table and are not computable from one list.
 - Contract failure: one JSON object on stderr, `{"error", "detail", "next"}`,
   exit 1, nothing on stdout. Usage error: exit 2.
 - **`check` exits 0 whether or not it found violations** (ADR-0006). Violations
-  are data. Exit 1 means an unreadable deck file, an unknown schema, or a card
-  name the card facts do not carry.
+  are data. Exit 1 means an unreadable deck file, an unknown schema, a card
+  name the card facts do not carry, more than four seats, or the same deck
+  given twice (ADR-0006). A part-built table is a defined state, not a failure.
 - Raise `ToolError(error, detail, next_step)` from `deck_composer.errors`. Every
   failure says what to do next. Never echo a price.
 - A field the design has not settled is **absent** from the output — never null
