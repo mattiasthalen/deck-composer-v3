@@ -54,14 +54,27 @@ shown, and once lists exist the measured budget is compared against it: a materi
 divergence is reported, because it means a choice was made on a figure that did not
 hold.
 
-**Decks are built scarcest-basic first, and the table spans built and unbuilt
-seats.** The estimate is least reliable exactly where this ADR's constraint binds:
-a three-colour deck's primary colour, which for a mandatory black commander is the
-Swamp count against the smallest basic supply in the collection. No correction
-factor is available that would not be invented, and the checkpoint has no lists to
-measure. Build order is the lever that invents nothing: building the deck with the
-largest claim on the scarcest basic first turns its demand from an estimate into a
-measurement while three decks are still unbuilt.
+**Decks are built least-reliable-claim first, and the table spans built and
+unbuilt seats.** The estimate is least reliable exactly where this ADR's constraint
+binds: a three-colour deck's primary colour, which for a mandatory black commander
+is the Swamp count against the smallest basic supply in the collection. No
+correction factor is available that would not be invented, and the checkpoint has
+no lists to measure. Build order is the lever that invents nothing.
+
+The scarcest basic is the one with the least projected headroom — owned, less
+measured, less estimated for the unbuilt seats — not the one least owned; 39 of 40
+Plains claimed is scarcer than 10 of 38 Swamps. Among the seats claiming it, the
+first built is the one with the most colours, because an even split errs by about
+±2 for two colours and by 3 to 6 in the generous direction for three. Ties break
+to the largest claim. Building that seat first turns the least reliable estimate at
+the table into a measurement while three decks are still unbuilt.
+
+Rejected: building the seat with the largest point-estimate claim first. Under an
+even split a two-colour black seat claims about 18 Swamps and a three-colour one
+about 12, so that rule builds a two-colour seat first at every table tested and
+never the three-colour one — retiring the most Swamps from the estimate column and
+the least uncertainty. Colour count is an oracle fact, so the chosen rule invents
+nothing the rejected one did not.
 
 It works only if a part-built table is expressible. A seat that exists is charged
 at its measured basics, one that does not is charged at its estimate, and the
