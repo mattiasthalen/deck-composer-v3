@@ -80,10 +80,13 @@ composer's input order, which would let the order a list was written in steer a
 tool decision. The whole `scarcest_basic` block is order-invariant for the same
 reason.
 
-The block records which clause decided — colours, claim or name — and the `next`
-sentence renders its reason from that field. A seat that won on the name break is
-not described as the least reliable estimate; the prose says the break was
-arbitrary, because it was. This is the verdict rule of
+The block records which clause decided — colours, claim, name, or sole when only
+one seat claimed the basic and nothing was compared — and the `next` sentence
+renders its reason from that field. A seat that won on the name break is not
+described as the least reliable estimate; the prose says the break was arbitrary,
+because it was. A sole claimant is not described as having won anything; the
+prose says it is the only seat left on that basic, which is every part-built
+table's last seat. This is the verdict rule of
 [ADR-0006](0006-check-exits-zero-and-returns-violations-as-data.md) applied to
 reasons: the output never claims a reason that did not decide.
 
