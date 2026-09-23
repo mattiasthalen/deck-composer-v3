@@ -93,6 +93,19 @@ reasons: the output never claims a reason that did not decide.
 Building the named seat first turns the least reliable estimate at the table into
 a measurement while three decks are still unbuilt.
 
+**The block is present only when four seats are declared** — built or named as
+commanders — because a build order is a property of the whole table. Fewer than
+four seats gives the basic budget but not the order, and the distinction rests on
+one fact: adding a seat only ever adds demand. So over a short table `remaining`
+is an upper bound on the true figure, a basic named in `overcommitted` really is
+over, and an empty `overcommitted` is no evidence at all — the output says so in
+words. `scarcest_basic` is an argmin, and an argmin is not monotone: adding a
+seat can move the tightest basic and can move the first seat to build onto one
+not yet declared. Measured on this collection, two seats of four said build
+Camellia with nothing over; the full four said build Wick with Swamps at minus
+nine. A bound that is short is still true. A conclusion that is short can be
+wrong, and is withheld.
+
 Rejected: building the seat with the largest point-estimate claim first. Under an
 even split a two-colour black seat claims about 18 Swamps and a three-colour one
 about 12, so that rule builds a two-colour seat first at every table tested and
