@@ -608,6 +608,9 @@ def _seat(name: str, colours: str) -> dict:
     return {"commander": [name], "color_identity": list(colours)}
 
 
+REAL_POOL = Path("data/card_facts.json")
+
+
 def _budget(**remaining: tuple[int, int]) -> dict:
     """basic name -> (owned, remaining)."""
     return {name: {"owned": o, "used": 0, "remaining": r} for name, (o, r) in remaining.items()}
@@ -627,22 +630,73 @@ def test_the_seat_with_most_colours_is_built_first_not_the_largest_claim() -> No
     assert result["build_first"] == "Three"
 
 
-def test_a_tie_on_colours_breaks_to_the_largest_claim() -> None:
-    """A mono-black seat claims all 35 of its lands as Swamps; a two-colour one 18."""
+def test_a_tie_on_colours_is_always_a_tie_on_claim_today() -> None:
+    """ADR-0005's middle tie-break, to the largest claim, cannot bind under an even split.
+
+    The claim is a function of colour count alone, so seats that tie on colours
+    tie on claim as well, and the decision always falls through to the name. The
+    clause stays because a colour-weighted estimate would make it live. This
+    pins that it is not live now, so an estimator change that makes it bind
+    fails here, and that clause gets a test of its own rather than borrowing
+    this one's name.
+    """
+    two_colour = [("W", "B"), ("B", "G"), ("U", "B"), ("B", "R")]
+    assert len({check_module._estimated_demand([i])["Swamp"] for i in two_colour}) == 1
     basics = _budget(Swamp=(38, -20), Plains=(40, 20), Forest=(54, 36))
-    seats = [_seat("Two", "WB"), _seat("Other two", "BG"), _seat("Mono", "B")]
-    result = check_module.scarcest_basic(basics, seats)
-    assert result is not None and result["build_first"] in {"Two", "Other two"}
-    mono_vs_two = check_module.scarcest_basic(basics, [_seat("Mono", "B"), _seat("Mono2", "B")])
-    assert mono_vs_two is not None and mono_vs_two["build_first"] == "Mono"
+    result = check_module.scarcest_basic(basics, [_seat("Two", "WB"), _seat("Other two", "BG")])
+    assert result is not None
+    assert {c["estimated"] for c in result["claimants"]} == {18}
+    assert result["build_first"] == "Other two"  # decided by name: the claims are equal
 
 
-def test_a_full_tie_goes_to_the_seat_given_first() -> None:
-    """The order is the composer's input, so the tool never reorders an exact tie."""
+def test_an_exact_tie_breaks_on_commander_name_not_input_order() -> None:
+    """Swap two tied seats in the input and the seat built first must not change.
+
+    Input order is the composer's; letting it break the tie would let the order a
+    list was written in steer a tool decision (ADR-0002). The break is on the
+    commander name that sorts first, which nothing the composer does can move.
+    """
     basics = _budget(Swamp=(38, -9), Plains=(40, 5), Forest=(54, 20))
-    for first, second in (("A", "B"), ("B", "A")):
-        result = check_module.scarcest_basic(basics, [_seat(first, "WB"), _seat(second, "WB")])
-        assert result is not None and result["build_first"] == first
+    for seats in (
+        [_seat("Zeta", "WB"), _seat("Alpha", "WB")],
+        [_seat("Alpha", "WB"), _seat("Zeta", "WB")],
+    ):
+        result = check_module.scarcest_basic(basics, seats)
+        assert result is not None and result["build_first"] == "Alpha"
+
+
+def test_nothing_in_the_seat_block_depends_on_input_order() -> None:
+    """Not only the decision: the whole block, claimants included, is order-free."""
+    from itertools import permutations
+
+    basics = _budget(
+        Swamp=(38, -9), Plains=(40, 5), Island=(49, 37), Mountain=(42, 13), Forest=(54, 20)
+    )
+    seats = [_seat("Three", "UBR"), _seat("Orzhov", "WB"), _seat("Golgari", "BG")]
+    blocks = [check_module.scarcest_basic(basics, list(order)) for order in permutations(seats)]
+    assert all(block == blocks[0] for block in blocks)
+    assert blocks[0] is not None
+    assert [c["commander"] for c in blocks[0]["claimants"]] == ["Golgari", "Orzhov", "Three"]
+
+
+def test_the_tie_that_decides_the_second_seat_here_is_broken_by_name() -> None:
+    """The three seats left once Wick is built: Camellia and Zoraline tie on Swamp.
+
+    Against the real collection, two colours each, about 18 Swamps each — the
+    tie is the common case, so this is the break that picks the second seat.
+    """
+    from deck_composer.facts import read as read_facts
+
+    facts = read_facts(REAL_POOL)
+    three = ["Zoraline, Cosmos Caller", "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
+    for order in (three, list(reversed(three))):
+        scarcest = checkpoint(facts, order, RULES, TARGETS)["table"]["metrics"]["scarcest_basic"]
+        assert scarcest["basic"] == "Swamp"
+        assert {c["commander"] for c in scarcest["claimants"]} == {
+            "Camellia, the Seedmiser",
+            "Zoraline, Cosmos Caller",
+        }
+        assert scarcest["build_first"] == "Camellia, the Seedmiser"
 
 
 def test_scarcest_means_least_headroom_not_least_owned() -> None:
@@ -662,9 +716,6 @@ def test_a_basic_no_unbuilt_seat_claims_is_never_the_scarcest() -> None:
 def test_no_claimed_basic_names_no_seat() -> None:
     """A colourless commander claims no basic; there is nothing to build first."""
     assert check_module.scarcest_basic(_budget(Swamp=(38, 38)), [_seat("Page", "")]) is None
-
-
-REAL_POOL = Path("data/card_facts.json")
 
 
 @pytest.mark.parametrize(

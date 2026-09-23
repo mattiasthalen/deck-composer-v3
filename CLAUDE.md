@@ -34,8 +34,11 @@ table is on course to run out of. A table with an unbuilt seat never reports
 While any seat is unbuilt, `table.metrics.scarcest_basic` names the basic with
 the least projected headroom among those an unbuilt seat claims, lists its
 claimants, and names the seat ADR-0005 builds first: the claimant with the most
-colours, whose estimate is the least reliable, ties to the largest claim, then
-to the seat given first. `next` renders from it. This is computation over colour
+colours, whose estimate is the least reliable, ties to the largest claim, and an
+exact tie to the commander name that sorts first. `next` renders from it.
+Nothing in the block depends on the order the composer lists the seats: under
+an even split two-colour seats tie every time, so an input-order break would let
+the writing of a list steer which seat is built second. This is computation over colour
 identity and projected headroom and chooses nothing about any deck; left to the
 composer it would be a fact the builder derives about its own picks (ADR-0002).
 It is **not** the largest claim: under an even split a two-colour seat out-claims
