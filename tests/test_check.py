@@ -512,8 +512,8 @@ def test_a_checkpoint_never_certifies_the_table(card_facts: CardFacts) -> None:
     """
     report = checkpoint(card_facts, [ZORALINE_NAME], RULES, TARGETS)
     assert "passed" not in report
-    assert "No violations" not in report["next"]
-    assert "Render" not in report["next"]
+    assert "no violations" not in report["next"].lower()
+    assert "render" not in report["next"].lower()
     assert "checkpoint" in report["next"]
 
 
@@ -540,7 +540,7 @@ def test_a_part_built_table_is_not_certified(card_facts: CardFacts) -> None:
         decks=tuple(dataclasses.replace(d, violations=()) for d in report.decks),
     )
     assert clean.passed is False
-    assert "Render" not in clean.to_dict()["next"]
+    assert "render" not in clean.to_dict()["next"].lower()
     assert "unbuilt" in clean.to_dict()["next"]
 
 
@@ -587,9 +587,15 @@ def test_the_budget_always_carries_the_five_basics(card_facts: CardFacts) -> Non
         assert {"Plains", "Island", "Swamp", "Mountain", "Forest"} <= set(budget)
 
 
-def test_one_basic_on_two_lines_is_summed(card_facts: CardFacts) -> None:
+@pytest.mark.parametrize(
+    "lines",
+    [
+        ["20 Forest (BLB) 280", "15 Forest (BLB) 281"],  # the reviewer's case
+        ["20 Forest (FDN) 280", "15 Forest"],  # pinned beside bare
+    ],
+)
+def test_one_basic_on_two_lines_is_summed(card_facts: CardFacts, lines: list[str]) -> None:
     """Keyed by name, the second line overwrote the first: Forest 15 beside lands 35."""
-    text = deck_text("d", [ZORALINE], ["20 Forest (FDN) 280", "15 Forest"])
-    metrics = one(text, card_facts).decks[0].metrics
+    metrics = one(deck_text("d", [ZORALINE], lines), card_facts).decks[0].metrics
     assert metrics["basics"] == {"Forest": 35}
     assert sum(metrics["basics"].values()) == metrics["lands"]
