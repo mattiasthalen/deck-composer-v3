@@ -956,3 +956,32 @@ def test_the_build_order_sentence_reads_for_every_clause(decided_by: str) -> Non
     assert sentence.count("seats claiming it") <= 1
     assert "Wick" in sentence and "Swamp" in sentence
     assert ("least reliable" in sentence) == (decided_by == "colours")
+
+
+@pytest.mark.parametrize(
+    ("built", "seats"),
+    [(0, 1), (0, 2), (0, 3), (1, 1), (1, 2), (2, 1)],
+)
+def test_a_partly_declared_table_says_what_its_numbers_cover(
+    card_facts: CardFacts, built: int, seats: int
+) -> None:
+    """The missing-seats warning fired only when no seat was declared at all.
+
+    With some declared and fewer than four in total, the build order and the
+    budget were computed over part of the table and said nothing: two of four
+    declared named Camellia and nothing overcommitted, where the four named Wick
+    and a Swamp overrun. The warning now covers every short table.
+    """
+    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(built)]
+    report = _clean(
+        check_module.check(table(*decks), card_facts, RULES, TARGETS, pending=[WICK] * seats)
+    )
+    sentence = report.to_dict()["next"]
+    assert f"Only {built + seats} of the table's 4 seats are declared" in sentence
+    assert "not evidence" in sentence
+
+
+def test_a_fully_declared_table_carries_no_shortfall_warning(card_facts: CardFacts) -> None:
+    deck = deck_text("d", [ZORALINE], ["1 Plains"])
+    report = _clean(check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK] * 3))
+    assert "seats are declared" not in report.to_dict()["next"]

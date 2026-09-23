@@ -158,6 +158,19 @@ class TableReport:
         )
         scarcest = self.metrics.get("scarcest_basic")
         order = _build_order_sentence(scarcest) if scarcest else ""
+        declared = len(self.decks) + len(self.seats)
+        if declared < TABLE_SIZE:
+            # Adding a seat only adds demand, so over part of the table `remaining`
+            # is an upper bound and a basic named overcommitted really is one —
+            # but an empty list is no evidence, and the scarcest basic and the
+            # seat built first can both change when the rest arrive.
+            warning += (
+                f" Only {declared} of the table's {TABLE_SIZE} seats are declared, so the "
+                "build order and the basic budget cover those alone; an empty "
+                "overcommitted list is not evidence. Pass the rest as --commander."
+            )
+        elif declared > TABLE_SIZE:
+            warning += f" {declared} seats are declared and a table is {TABLE_SIZE}."
         if self.seats and not self.decks:
             return (
                 "This is the checkpoint: no deck exists yet, so nothing is certified. "
