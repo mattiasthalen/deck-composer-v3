@@ -9,7 +9,7 @@ import pytest
 
 from deck_composer import cli
 from deck_composer.facts import render
-from tests.helpers import EXPORT, deck_text, write_deck
+from tests.helpers import EXPORT, SEAT_LINES, deck_text, write_deck
 
 ZORALINE = "1 Zoraline, Cosmos Caller (BLB) 242"
 
@@ -24,7 +24,7 @@ def facts_file(tmp_path: Path, card_facts) -> Path:
 def four_decks(tmp_path: Path, mainboard: list[str]) -> list[str]:
     """A whole table: the lexicon's table is four decks, and only four is certified."""
     return [
-        str(write_deck(tmp_path, f"d{n}", deck_text(f"d{n}", [ZORALINE], mainboard)))
+        str(write_deck(tmp_path, f"d{n}", deck_text(f"d{n}", [SEAT_LINES[n]], mainboard)))
         for n in range(4)
     ]
 
@@ -62,7 +62,7 @@ def test_check_exits_one_for_a_contract_failure(tmp_path, facts_file, capsys) ->
 def test_check_takes_the_whole_table_in_one_call(tmp_path, facts_file, capsys) -> None:
     decks = []
     for n in range(2):
-        text = deck_text(f"d{n}", [ZORALINE], ["1 Vengeful Bloodwitch"])
+        text = deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Vengeful Bloodwitch"])
         decks.append(str(write_deck(tmp_path, f"d{n}", text)))
     code, out, _ = run(["check", *decks, "--facts", str(facts_file)], capsys)
     assert code == 0
@@ -322,7 +322,7 @@ def test_fewer_than_four_decks_is_not_a_table(tmp_path, facts_file, capsys, coun
 def test_more_than_four_seats_exits_one_with_json(tmp_path, facts_file, capsys) -> None:
     """ADR-0006: exit 1, one JSON object on stderr, nothing on stdout."""
     decks = four_decks(tmp_path, ["1 Plains"])
-    decks.append(str(write_deck(tmp_path, "d4", deck_text("d4", [ZORALINE], ["1 Plains"]))))
+    decks.append(str(write_deck(tmp_path, "d4", deck_text("d4", [SEAT_LINES[4]], ["1 Plains"]))))
     code, out, err = run(["check", *decks, "--facts", str(facts_file)], capsys)
     assert code == 1
     assert out == {}
@@ -335,3 +335,21 @@ def test_the_same_deck_given_twice_exits_one(tmp_path, facts_file, capsys) -> No
     assert code == 1
     assert out == {}
     assert err["error"] == "deck_given_twice"
+
+
+def test_a_commander_given_twice_exits_one(tmp_path, facts_file, capsys) -> None:
+    code, out, err = run(
+        [
+            "check",
+            "--commander",
+            "Zoraline, Cosmos Caller",
+            "--commander",
+            "Zoraline, Cosmos Caller",
+            "--facts",
+            str(facts_file),
+        ],
+        capsys,
+    )
+    assert code == 1
+    assert out == {}
+    assert err["error"] == "commander_given_twice" and err["next"]

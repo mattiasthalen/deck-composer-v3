@@ -14,7 +14,7 @@ from deck_composer.errors import ToolError
 from deck_composer.facts import CardFacts
 from deck_composer.manabox import parse_deck
 from deck_composer.rules import read_rules, read_targets
-from tests.helpers import deck_text
+from tests.helpers import SEAT_LINES, SEAT_NAMES, deck_text
 
 ZORALINE = "1 Zoraline, Cosmos Caller (BLB) 242"
 ZORALINE_NAME = "Zoraline, Cosmos Caller"
@@ -145,14 +145,14 @@ def test_an_unowned_maybeboard_name_is_not_resolved(card_facts: CardFacts) -> No
 
 def test_ownership_is_summed_across_the_whole_table(card_facts: CardFacts) -> None:
     """Six Moonrise Clerics are owned five; four decks each taking one is fine."""
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Moonrise Cleric"]) for n in range(4)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Moonrise Cleric"]) for n in range(4)]
     report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     assert not [v for v in report.violations if v.code == "ownership"]
 
 
 def test_the_table_overdrawing_a_card_violates(card_facts: CardFacts) -> None:
     """Vengeful Bloodwitch is owned once; two decks cannot both play it."""
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Vengeful Bloodwitch"]) for n in range(2)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Vengeful Bloodwitch"]) for n in range(2)]
     report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     found = [v for v in report.violations if v.code == "ownership"]
     assert found and found[0].detail == {
@@ -164,7 +164,7 @@ def test_the_table_overdrawing_a_card_violates(card_facts: CardFacts) -> None:
 
 def test_basics_are_owned_like_any_other_card(card_facts: CardFacts) -> None:
     """ADR-0005: no exemption. The export holds 14 Plains."""
-    decks = [deck_text(f"d{n}", [ZORALINE], ["10 Plains"]) for n in range(2)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["10 Plains"]) for n in range(2)]
     report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     found = [v for v in report.violations if v.code == "ownership"]
     assert found and found[0].detail == {"card": "Plains", "used": 20, "owned": 14}
@@ -186,7 +186,7 @@ def test_a_token_printing_does_not_inflate_the_cards_ownership(card_facts: CardF
 
 
 def test_the_basic_budget_is_reported_at_the_table(card_facts: CardFacts) -> None:
-    decks = [deck_text(f"d{n}", [ZORALINE], ["5 Plains"]) for n in range(2)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["5 Plains"]) for n in range(2)]
     report = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     budget = report.metrics["basic_budget"]["Plains"]
     assert budget["owned"] == 14
@@ -222,7 +222,10 @@ def test_metrics_measure_the_deck(card_facts: CardFacts) -> None:
 
 def test_the_spread_is_reported_without_a_verdict(card_facts: CardFacts) -> None:
     """The band that would judge this spread is not yet decided, so none is emitted."""
-    decks = [deck_text("a", [ZORALINE], ["20 Plains"]), deck_text("b", [ZORALINE], ["10 Plains"])]
+    decks = [
+        deck_text("a", [SEAT_LINES[0]], ["20 Plains"]),
+        deck_text("b", [SEAT_LINES[1]], ["10 Plains"]),
+    ]
     spread = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics["spread"]
     assert spread["lands"] == {"values": [20, 10], "min": 10, "max": 20, "spread": 10}
     assert "verdict" not in spread and "band" not in spread
@@ -354,7 +357,7 @@ def test_a_target_the_collection_cannot_meet_is_still_reported(
 def test_the_ceiling_comes_from_colour_identity_alone(card_facts: CardFacts) -> None:
     """A ceiling that moved with build order could not be reasoned about."""
     alone = one(deck_text("a", [ZORALINE], ["1 Plains"]), card_facts)
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Vengeful Bloodwitch"]) for n in range(3)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Vengeful Bloodwitch"]) for n in range(3)]
     crowded = check_module.check(table(*decks), card_facts, RULES, TARGETS)
     assert (
         alone.decks[0].metrics["categories"]["draw"]["ceiling"]
@@ -366,7 +369,10 @@ def test_the_ceiling_comes_from_colour_identity_alone(card_facts: CardFacts) -> 
 
 
 def test_the_spread_covers_four_axes_and_judges_none(card_facts: CardFacts) -> None:
-    decks = [deck_text("a", [ZORALINE], ["20 Plains"]), deck_text("b", [ZORALINE], ["10 Plains"])]
+    decks = [
+        deck_text("a", [SEAT_LINES[0]], ["20 Plains"]),
+        deck_text("b", [SEAT_LINES[1]], ["10 Plains"]),
+    ]
     spread = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics["spread"]
     assert set(spread) == {
         "note",
@@ -398,7 +404,7 @@ def test_the_measured_budget_is_compared_against_the_estimate(
     Two Orzhov decks estimate an even 35-land split, so roughly 35 Plains. Both
     lists here take 5, so the estimate asked for far more than the build used.
     """
-    decks = [deck_text(f"d{n}", [ZORALINE], ["5 Plains"]) for n in range(2)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["5 Plains"]) for n in range(2)]
     metrics = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics
     plains = metrics["basic_budget"]["Plains"]
     assert plains["used"] == 10
@@ -412,7 +418,7 @@ def test_an_estimate_that_was_too_generous_is_named(card_facts: CardFacts) -> No
     It admits a commander set the collection cannot support, and nothing finds
     that out until four land bases exist.
     """
-    decks = [deck_text(f"d{n}", [ZORALINE], ["30 Plains"]) for n in range(2)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["30 Plains"]) for n in range(2)]
     metrics = check_module.check(table(*decks), card_facts, RULES, TARGETS).metrics
     assert metrics["basic_budget"]["Plains"]["divergence"] == 25
     assert "Plains" in metrics["estimate"]["generous_for"]
@@ -469,7 +475,9 @@ def test_a_projected_overrun_is_named_not_blocked(card_facts: CardFacts) -> None
     building the scarcest basic first: seen at deck one, not deck four.
     """
     deck = deck_text("d", [ZORALINE], ["12 Swamp"])
-    report = check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK, WICK])
+    report = check_module.check(
+        table(deck), card_facts, RULES, TARGETS, pending=[WICK, SEAT_NAMES[1]]
+    )
     metrics = report.metrics
     assert metrics["basic_budget"]["Swamp"]["remaining"] < 0
     assert "Swamp" in metrics["overcommitted"]
@@ -923,7 +931,7 @@ def _clean(report):
 def test_a_short_table_asks_for_the_missing_seats(card_facts: CardFacts, count: int) -> None:
     """Clean decks, but fewer than four and none declared: nothing is certified,
     and `next` says the budget is charging the missing seats nothing."""
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(count)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Plains"]) for n in range(count)]
     report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
     assert report.complete is False and report.passed is False
     sentence = report.to_dict()["next"]
@@ -937,7 +945,7 @@ def test_more_than_four_seats_is_a_contract_failure(
     card_facts: CardFacts, decks: int, commanders: int
 ) -> None:
     """A table of five is not a table, and no output is correct for it (ADR-0006)."""
-    texts = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(decks)]
+    texts = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Plains"]) for n in range(decks)]
     with pytest.raises(ToolError) as caught:
         check_module.check(table(*texts), card_facts, RULES, TARGETS, pending=[WICK] * commanders)
     assert caught.value.error == "too_many_seats"
@@ -945,7 +953,7 @@ def test_more_than_four_seats_is_a_contract_failure(
 
 
 def test_only_a_complete_clean_table_says_render(card_facts: CardFacts) -> None:
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(4)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Plains"]) for n in range(4)]
     report = _clean(check_module.check(table(*decks), card_facts, RULES, TARGETS))
     assert report.complete and report.passed
     assert "Render the decklists" in report.to_dict()["next"]
@@ -993,9 +1001,11 @@ def test_a_partly_declared_table_says_what_its_numbers_cover(
     declared named Camellia and nothing overcommitted, where the four named Wick
     and a Swamp overrun. The warning now covers every short table.
     """
-    decks = [deck_text(f"d{n}", [ZORALINE], ["1 Plains"]) for n in range(built)]
+    decks = [deck_text(f"d{n}", [SEAT_LINES[n]], ["1 Plains"]) for n in range(built)]
     report = _clean(
-        check_module.check(table(*decks), card_facts, RULES, TARGETS, pending=[WICK] * seats)
+        check_module.check(
+            table(*decks), card_facts, RULES, TARGETS, pending=SEAT_NAMES[built : built + seats]
+        )
     )
     sentence = report.to_dict()["next"]
     assert f"Only {built + seats} of the table's 4 seats are declared" in sentence
@@ -1004,7 +1014,11 @@ def test_a_partly_declared_table_says_what_its_numbers_cover(
 
 def test_a_fully_declared_table_carries_no_shortfall_warning(card_facts: CardFacts) -> None:
     deck = deck_text("d", [ZORALINE], ["1 Plains"])
-    report = _clean(check_module.check(table(deck), card_facts, RULES, TARGETS, pending=[WICK] * 3))
+    report = _clean(
+        check_module.check(
+            table(deck), card_facts, RULES, TARGETS, pending=[WICK, *SEAT_NAMES[1:3]]
+        )
+    )
     assert "seats are declared" not in report.to_dict()["next"]
 
 
@@ -1053,3 +1067,56 @@ def test_a_single_commander_checkpoint_names_no_seat() -> None:
     view = checkpoint(read_facts(REAL_POOL), ["Alania, Divergent Storm"], RULES, TARGETS)
     assert "scarcest_basic" not in view["table"]["metrics"]
     assert "builds" not in view["next"]
+
+
+WICK_DECK_TEXT = (
+    "// schema: 1\n// Commander\n1 Wick, the Whorled Mind (BLB) 120\n// Mainboard\n10 Swamp\n"
+)
+
+
+def test_a_built_seat_declared_again_is_a_contract_failure() -> None:
+    """The review's gate: Wick built, then passed as --commander too, with Mabel
+    left out. Accepted as four seats, it charged Wick twice, left Mabel out, and
+    named Wick to build next; the real table names Camellia."""
+    from deck_composer.facts import read as read_facts
+
+    wick = parse_deck(WICK_DECK_TEXT, path="wick.deck.txt")
+    with pytest.raises(ToolError) as caught:
+        check_module.check(
+            [wick],
+            read_facts(REAL_POOL),
+            RULES,
+            TARGETS,
+            pending=[WICK, ZORALINE_NAME, "Camellia, the Seedmiser"],
+        )
+    assert caught.value.error == "commander_given_twice"
+    assert caught.value.detail["commanders"] == [WICK]
+
+
+def test_one_seat_named_twice_is_a_contract_failure(card_facts: CardFacts) -> None:
+    with pytest.raises(ToolError) as caught:
+        check_module.check((), card_facts, RULES, TARGETS, pending=[ZORALINE_NAME, ZORALINE_NAME])
+    assert caught.value.error == "commander_given_twice"
+
+
+def test_a_face_name_cannot_alias_a_repeat_past_the_check() -> None:
+    """Either face resolves to the card, so the comparison is on the card's name."""
+    from deck_composer.facts import read as read_facts
+
+    with pytest.raises(ToolError) as caught:
+        checkpoint(
+            read_facts(REAL_POOL),
+            ["Sanar, Unfinished Genius", "Sanar, Unfinished Genius // Wild Idea"],
+            RULES,
+            TARGETS,
+        )
+    assert caught.value.error == "commander_given_twice"
+
+
+def test_four_distinct_commanders_are_accepted() -> None:
+    from deck_composer.facts import read as read_facts
+
+    wick = parse_deck(WICK_DECK_TEXT, path="wick.deck.txt")
+    pending = [ZORALINE_NAME, "Camellia, the Seedmiser", "Mabel, Heir to Cragflame"]
+    report = check_module.check([wick], read_facts(REAL_POOL), RULES, TARGETS, pending=pending)
+    assert report.metrics["scarcest_basic"]["build_first"] == "Camellia, the Seedmiser"

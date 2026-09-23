@@ -9,7 +9,7 @@ from deck_composer import facts as facts_module
 from deck_composer import manabox, scryfall
 from deck_composer.facts import CardFacts
 from deck_composer.rules import Rules, Targets, read_rules, read_targets
-from tests.helpers import EXPORT, FakeScryfall
+from tests.helpers import EXPORT, FakeScryfall, with_seat_commanders
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def card_facts(tmp_path: Path, export: manabox.Export, transport: FakeScryfall) 
         client=scryfall.Client(transport=transport, sleep=lambda _: None),
         today=date(2026, 9, 20),
     )
-    return result.facts
+    return with_seat_commanders(result.facts)
 
 
 @pytest.fixture
