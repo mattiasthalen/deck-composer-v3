@@ -47,8 +47,11 @@ claimants, and names the seat ADR-0005 builds first: the claimant with the most
 colours, whose estimate is the least reliable, ties to the largest claim, and an
 exact tie to the commander name that sorts first. `decided_by` says which of
 those clauses picked the seat, and `next` renders the reason from it: only a win
-on colours may call the estimate "least reliable", and on the common name tie it
-says the break was arbitrary. The
+on colours may call the estimate "least reliable", on the common name tie it says
+the break was arbitrary, and a sole claimant (`sole`) claims no comparison at all.
+Beware `all()` over an empty list anywhere a verdict or a reason is derived: it
+is vacuously true, and it produced both the false-green `passed` and a "most
+colours" win over nobody. The
 middle clause cannot bind under the even-split estimate, where the claim is a
 function of colour count alone; a test pins that, so an estimator that makes it
 live fails there first.
