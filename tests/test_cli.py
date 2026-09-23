@@ -229,3 +229,48 @@ def test_undecodable_card_facts_exits_one_with_json(tmp_path, capsys) -> None:
     assert code == 1
     assert out == {}
     assert err["error"] == "card_facts_unreadable" and err["next"]
+
+
+def _every_key_path(obj, prefix: str = ""):
+    """Every key path in a payload, walking EVERY list element, not a sample.
+
+    A guard that sampled the first element would miss a `passed` on the second
+    deck, which is exactly where a part-built table puts its unbuilt seats.
+    """
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            path = f"{prefix}.{key}" if prefix else key
+            yield path
+            yield from _every_key_path(value, path)
+    elif isinstance(obj, list):
+        for index, value in enumerate(obj):
+            yield from _every_key_path(value, f"{prefix}[{index}]")
+
+
+def _passed_paths(payload) -> list[str]:
+    return [p for p in _every_key_path(payload) if p == "passed" or p.endswith(".passed")]
+
+
+def test_no_passed_key_at_any_depth_while_a_seat_is_unbuilt(tmp_path, facts_file, capsys) -> None:
+    """Withheld only at the top, `passed` was still a false green one level down.
+
+    At a checkpoint `table.passed` was vacuously true and the only `passed` in
+    the payload; at a part-built table each built deck carried one too, although
+    an unbuilt seat may still take the cards it relies on. A suffix match finds
+    every such key at once, so a fourth cannot appear unnoticed.
+    """
+    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
+    stages = {
+        "checkpoint": ["check", "--commander", "Zoraline, Cosmos Caller"],
+        "part-built": ["check", str(deck), "--commander", "Wick, the Whorled Mind"],
+    }
+    for stage, argv in stages.items():
+        _, out, _ = run([*argv, "--facts", str(facts_file)], capsys)
+        assert _passed_paths(out) == [], f"{stage} carries {_passed_paths(out)}"
+
+
+def test_every_passed_key_returns_once_every_seat_is_built(tmp_path, facts_file, capsys) -> None:
+    """Both mean what they say again: the table verdict, and table-level rules."""
+    deck = write_deck(tmp_path, "d", deck_text("d", [ZORALINE], ["1 Plains"]))
+    _, out, _ = run(["check", str(deck), "--facts", str(facts_file)], capsys)
+    assert _passed_paths(out) == ["passed", "decks[0].passed", "table.passed"]

@@ -178,3 +178,31 @@ def test_a_name_carrying_parentheses_still_parses() -> None:
     """The strictness is about a trailing suffix, not about parentheses in names."""
     deck = parse_deck("// schema: 1\n// Mainboard\n1 Erase (Not the Urza's Legacy One)\n", path="d")
     assert deck.mainboard[0] == Entry(1, "Erase (Not the Urza's Legacy One)")
+
+
+# Verbatim from a real ManaBox 4.1.12 deck export (manabase eval fixtures).
+REAL_EXPORT = """3 Amalia Benavides Aguirre (LCI) 221
+4 Plains (SOS) 273
+5 Plains (SOS) 272
+"""
+
+
+def test_a_raw_manabox_export_is_rejected_at_line_one() -> None:
+    """ManaBox exports a different shape from the grammar it imports (A5).
+
+    No sections, no comments, every line pinned, basics split across printings.
+    Round-tripping exports is not a goal, so this fails loudly at its first line
+    rather than being half-read.
+    """
+    with pytest.raises(ToolError) as caught:
+        parse_deck("// schema: 1\n" + REAL_EXPORT, path="export.txt")
+    problem = caught.value.detail["problems"][0]
+    assert problem["problem"] == "entry_before_section"
+    assert problem["line"] == 2  # the first card line, after the schema comment
+
+
+def test_the_export_shape_parses_once_it_is_given_a_section() -> None:
+    """Its lines are in the grammar; only the missing section is not."""
+    deck = parse_deck("// schema: 1\n// Mainboard\n" + REAL_EXPORT, path="d")
+    plains = [e for e in deck.mainboard if e.name == "Plains"]
+    assert [(e.quantity, e.collector_number) for e in plains] == [(4, "273"), (5, "272")]

@@ -28,14 +28,21 @@ and no decks is ADR-0008's checkpoint; one deck and three commanders is
 ADR-0005's scarcest-basic-first build order after its first seat. An unbuilt
 seat is still charged to the basic budget at its estimate, or the first deck
 built looks far cheaper than it is, and `overcommitted` names the basics the
-table is on course to run out of. A table with an unbuilt seat never reports
-`passed`.
+table is on course to run out of. **While any seat is unbuilt, no key named
+`passed` exists at any depth** — not at the top, not on `table`, not on a built
+deck, which cannot pass while an unbuilt seat may still take the cards it
+relies on. Withheld at the top only, `table.passed` was still vacuously true one
+level down. A test walks every key of the payload for the suffix, so a fourth
+cannot appear unnoticed; renaming one would not help.
 
 While any seat is unbuilt, `table.metrics.scarcest_basic` names the basic with
 the least projected headroom among those an unbuilt seat claims, lists its
 claimants, and names the seat ADR-0005 builds first: the claimant with the most
 colours, whose estimate is the least reliable, ties to the largest claim, and an
-exact tie to the commander name that sorts first. `next` renders from it.
+exact tie to the commander name that sorts first. `next` renders from it. The
+middle clause cannot bind under the even-split estimate, where the claim is a
+function of colour count alone; a test pins that, so an estimator that makes it
+live fails there first.
 Nothing in the block depends on the order the composer lists the seats: under
 an even split two-colour seats tie every time, so an input-order break would let
 the writing of a list steer which seat is built second. This is computation over colour
@@ -136,6 +143,11 @@ A module never parses another module's format.
 - **A decklist line is not uniformly `N Name (SET) COLLECTOR`.** Basics and
   unowned maybeboard entries are the bare `15 Plains`. A parser requiring the
   suffix drops every basic — the quantity ADR-0005 makes load-bearing.
+  A **raw ManaBox export is a different shape** from the grammar ManaBox imports
+  (A5): no sections, no comments, every line pinned, basics split across
+  printings. `check` reads the import grammar only, so an export fails at its
+  first card line with `entry_before_section`. That is intended; round-tripping
+  exports is not a goal. Basics split across printings are summed by name.
   Anything **after** a pinned suffix — `1 Sol Ring (LTR) 123 *F*` — is outside
   the recorded format and fails at its line; left loose, it is swallowed into
   the name and resurfaces as an unknown card with no line number.

@@ -55,13 +55,15 @@ class DeckReport:
     def passed(self) -> bool:
         return not self.violations
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, certify: bool = True) -> dict[str, Any]:
+        """`certify` is false while any seat at the table is unbuilt: a built deck
+        cannot pass while an unbuilt seat may still take the cards it relies on."""
         return {
             "deck": self.name,
             "path": self.path,
             "commander": list(self.commander),
             "color_identity": list(self.color_identity),
-            "passed": self.passed,
+            **({"passed": self.passed} if certify else {}),
             "violations": [v.to_dict() for v in self.violations],
             "metrics": self.metrics,
         }
@@ -93,6 +95,11 @@ class TableReport:
         )
 
     def to_dict(self) -> dict[str, Any]:
+        # No key named `passed` exists at any depth while a seat is unbuilt. Each
+        # one withheld only at the top was still a false green one level down —
+        # vacuously true at a checkpoint, where it was the only `passed` in the
+        # payload. Renaming would not help: a renamed vacuous true is still one.
+        certify = not self.seats
         return {
             "bracket": BRACKET,
             "snapshot": {
@@ -102,13 +109,11 @@ class TableReport:
                 "rules_hash": self.rules.content_hash,
                 "targets_version": self.targets.version,
             },
-            # A table with seats still unbuilt cannot report green. Reporting it
-            # would have the shape of gen 1's false green, and shape is what gets
-            # read.
-            **({} if self.seats else {"passed": self.passed}),
-            "decks": [deck.to_dict() for deck in self.decks] + list(self.seats),
+            **({"passed": self.passed} if certify else {}),
+            "decks": [deck.to_dict(certify=certify) for deck in self.decks] + list(self.seats),
             "table": {
-                "passed": not self.violations,
+                # table-level rules only, such as ownership across the four
+                **({"passed": not self.violations} if certify else {}),
                 "violations": [v.to_dict() for v in self.violations],
                 "metrics": self.metrics,
             },
