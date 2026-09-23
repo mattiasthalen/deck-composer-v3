@@ -337,7 +337,7 @@ def test_the_same_deck_given_twice_exits_one(tmp_path, facts_file, capsys) -> No
     assert err["error"] == "deck_given_twice"
 
 
-def test_a_commander_given_twice_exits_one(tmp_path, facts_file, capsys) -> None:
+def test_a_commander_declared_twice_exits_one(tmp_path, facts_file, capsys) -> None:
     code, out, err = run(
         [
             "check",
@@ -352,4 +352,4 @@ def test_a_commander_given_twice_exits_one(tmp_path, facts_file, capsys) -> None
     )
     assert code == 1
     assert out == {}
-    assert err["error"] == "commander_given_twice" and err["next"]
+    assert err["error"] == "commander_declared_twice" and err["next"]

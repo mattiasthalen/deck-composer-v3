@@ -357,7 +357,7 @@ def check(
     repeated_commanders = sorted({n for n in commanders if commanders.count(n) > 1})
     if repeated_commanders:
         raise ToolError(
-            "commander_given_twice",
+            "commander_declared_twice",
             {"commanders": repeated_commanders},
             "Give each commander once: a built seat is its deck file, an unbuilt one a "
             "--commander, never both, and a table is four distinct commanders.",
