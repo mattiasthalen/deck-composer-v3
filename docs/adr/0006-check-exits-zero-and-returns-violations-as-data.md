@@ -18,7 +18,10 @@ seats, the same deck given twice, or the same commander declared twice across th
 built decks and `--commander`. Seats are counted distinct: a commander that is
 both a built deck and a declared seat is one seat, and a table that reaches four
 only by counting it twice is a short table that would otherwise pass as complete
-and name the built seat as the next to build. Fewer than four seats is not a failure — a
+and name the built seat as the next to build. A repeated commander was never
+inside the design's model of a table: the 1,771 candidate sets of
+[ADR-0008](0008-the-owner-picks-the-commanders-at-a-checkpoint-before-building.md)
+are C(23,3), which counts distinct commanders only. Fewer than four seats is not a failure — a
 part-built table is a defined state and the output says which seats are missing —
 but a table of five is not a table, and there is no output that would be correct
 for it.
