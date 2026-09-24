@@ -49,7 +49,7 @@ Uppmätt form:
    prowess; Stress Dream kopierad är två skott och två titt.
 5. Håll en counter till den besvärjelse som skulle avsluta dig: Negate mot
    icke-varelser, Essence Scatter mot varelser, Dazzling Denial som skatt,
-   Spellgyre när du har råd med fyra. Maha, Jazal Goldmanes pump, Root
+   Spellgyre när du har råd med fyra. Maha, Joraga Invocation, Root
    Manipulation och Rabbit Response är målen.
 6. Svepare när du ligger efter på bordet: Brotherhood's End (tre skada på varje
    varelse) och Splatter Technique (fyra, eller dra fyra när bordet är okej).

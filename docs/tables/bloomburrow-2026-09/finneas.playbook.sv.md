@@ -63,7 +63,7 @@ Uppmätt form:
 
 - Alania håller två bordsvepare. Lägg inte alla tokens på bordet på en gång;
   spara Hop to It eller Head of the Homestead på handen för att bygga upp igen,
-  och håll Dawn's Truce när hon har fyra mana öppet.
+  och håll Dawn's Truce när hon har tre mana öppet.
 - Ekorrar med menace kräver två blockerare var. Du har kropparna; blockera i
   par.
 - Wicks Maha, Its Feathers Night sätter dina tokens tålighet till ett. Svara

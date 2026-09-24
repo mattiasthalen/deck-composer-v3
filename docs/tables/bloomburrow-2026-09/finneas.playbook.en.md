@@ -59,7 +59,7 @@ Measured shape:
 
 - Alania holds two board wipes. Do not put every token on the table at once;
   keep Hop to It or Head of the Homestead in hand to rebuild, and hold Dawn's
-  Truce when she has four mana open.
+  Truce when she has three mana open.
 - Menace Squirrels need two blockers each. You have the bodies; block in pairs.
 - Wick's Maha, Its Feathers Night sets your tokens' toughness to one. Answer
   it immediately: Banishing Light, Parting Gust, Angelic Edict, Repel Calamity.
