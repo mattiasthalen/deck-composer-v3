@@ -48,7 +48,7 @@ Measured shape:
    Dream copied is two bolts and two looks.
 5. Hold a counter for the one spell that would end you: Negate for
    noncreature, Essence Scatter for creatures, Dazzling Denial as a tax,
-   Spellgyre when you can afford four. Maha, Jazal Goldmane's pump, Root
+   Spellgyre when you can afford four. Maha, Joraga Invocation, Root
    Manipulation and Rabbit Response are the targets.
 6. Sweepers when behind on board: Brotherhood's End (three damage to each
    creature) and Splatter Technique (four, or draw four when the board is

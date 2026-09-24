@@ -133,7 +133,9 @@ you would give.
 ### Speed and shape
 
 Finneas is on the table on turn two, Camellia on three, Wick on four, Alania on
-five, and the average mana values in the spread table run in the same order.
+five. The average mana values in the spread table put Finneas and Camellia
+lightest and Wick heaviest; Alania sits between them, lighter than Wick despite
+the five-mana commander.
 Expect Finneas and Camellia to apply the early pressure and Wick and Alania to
 take over once their engines are online. Alania in particular has to survive to
 five mana with the fewest creatures at the table; her bounce spells and the two
