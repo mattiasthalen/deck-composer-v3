@@ -1,0 +1,76 @@
+// schema: 1
+
+// Commander
+1 Finneas, Ace Archer (BLB) 212
+
+// Mainboard
+1 Brave-Kin Duo (BLB) 3
+1 Burrowguard Mentor (BLB) 206
+1 Druid of the Spade (BLB) 170
+1 Harvestrite Host (BLB) 15
+1 Hazardroot Herbalist (BLB) 174
+1 Head of the Homestead (BLB) 216
+1 Hinterland Sanctifier (FDN) 730
+1 Intrepid Rabbit (BLB) 17
+1 Seasoned Warrenguard (BLB) 30
+1 Treeguard Duo (BLB) 200
+1 Valley Questcaller (BLB) 36
+1 Warren Elder (BLB) 37
+1 Barkform Harvester (BLB) 243
+1 Three Tree Mascot (FDN) 682
+1 Prideful Parent (FDN) 21
+1 Eager Glyphmage (SOS) 11
+1 Helpful Hunter (FDN) 16
+1 Inspiring Overseer (FDN) 496
+1 Felidar Savior (FDN) 12
+1 Pileated Provisioner (BLB) 25
+1 Sunshower Druid (BLB) 195
+1 Shrike Force (BLB) 31
+1 Jazal Goldmane (FDN) 497
+1 Beza, the Bounding Spring (BLB) 2
+1 Driftgloom Coyote (BLB) 11
+1 Hydra Broodmaster (CP1) 4
+1 Dazzling Angel (FDN) 9
+1 Elvish Mystic (M15) 173
+1 Three Tree Rootweaver (BLB) 198
+1 Druid of the Cowl (FDN) 554
+1 Clifftop Lookout (BLB) 168
+1 Scrapshooter (BLB) 191
+1 Hop to It (BLB) 16
+1 Carrot Cake (BLB) 7
+1 For the Common Good (BLB) 172
+1 Glorious Decay (SOS) 150
+1 Builder's Talent (BLB) 5
+1 Rabbit Response (BLB) 26
+1 Joraga Invocation (FDN) 555
+1 Germination Practicum (SOS) 296
+1 Innkeeper's Talent (BLB) 180
+1 Banner of Kinship (FDN) 127
+1 Tangle Tumbler (BLB) 250
+1 Heirloom Epic (BLB) 246
+1 Stocking the Pantry (BLB) 194
+1 Hunter's Talent (BLB) 179
+1 Feather of Flight (BLB) 13
+1 Pawpatch Formation (BLB) 186
+1 Banishing Light (BLB) 1
+1 Parting Gust (BLB) 24
+1 Repel Calamity (BLB) 27
+1 Sonar Strike (BLB) 32
+1 Prayer of Binding (FDN) 502
+1 Angelic Edict (FDN) 490
+1 Longstalk Brawl (BLB) 182
+1 Polliwallop (BLB) 189
+1 Plummet (M15) 192
+1 Ajani's Response (SOS) 6
+1 Dawn's Truce (BLB) 9
+1 Crumb and Get It (BLB) 8
+1 Wear Down (BLB) 203
+1 Heaped Harvest (BLB) 175
+1 Fountainport Bell (BLB) 245
+1 Hidden Grotto (BLB) 254
+1 Oakhollow Village (BLB) 258
+1 Lupinflower Village (BLB) 256
+1 Fountainport (BLB) 253
+1 Uncharted Haven (FDN) 564
+16 Plains
+15 Forest
