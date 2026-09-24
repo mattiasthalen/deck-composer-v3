@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "table": "bloomburrow-2026-09",
+  "bracket": 2,
+  "decks": [
+    {
+      "deck": "wick",
+      "path": "decks/wick.deck.txt",
+      "commander": "Wick, the Whorled Mind",
+      "color_identity": [
+        "U",
+        "B",
+        "R"
+      ]
+    },
+    {
+      "deck": "camellia",
+      "path": "decks/camellia.deck.txt",
+      "commander": "Camellia, the Seedmiser",
+      "color_identity": [
+        "B",
+        "G"
+      ]
+    },
+    {
+      "deck": "alania",
+      "path": "decks/alania.deck.txt",
+      "commander": "Alania, Divergent Storm",
+      "color_identity": [
+        "U",
+        "R"
+      ]
+    },
+    {
+      "deck": "finneas",
+      "path": "decks/finneas.deck.txt",
+      "commander": "Finneas, Ace Archer",
+      "color_identity": [
+        "W",
+        "G"
+      ]
+    }
+  ],
+  "export_sha256": "sha256:463504c90131fd7f4208eb434fc6b0ac4ff6d8e74ce9fb7e3d712a5190a82a1c",
+  "card_facts_refreshed": "2026-09-20",
+  "rules_version": "2026-09-20",
+  "rules_hash": "sha256:2de25d1be64d5fabf70085b84d3432c4fa9dffd65cd5513d89aa96a35f264dae",
+  "targets_version": "2026-09-20"
+}
