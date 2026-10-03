@@ -19,7 +19,7 @@ House targets for reference: draw 10, ramp 10, targeted interaction 8, sweepers 
 | Wick, the Whorled Mind | UBR | 36 | 33 | 3.14 | 13+4=17 of 17 | 15 (62) | 3 (13) | 16 (51) | 0 (3) |
 | Camellia, the Seedmiser | BG | 36 | 33 | 2.78 | 12+3=15 of 15 | 10 (24) | 10 (19) | 15 (36) | 0 (0) |
 | Alania, Divergent Storm | UR | 36 | 26 | 2.97 | 10+7=17 of 18 | 21 (51) | 4 (12) | 12 (31) | 2 (3) |
-| Finneas, Ace Archer | WG | 36 | 33 | 2.77 | 12+5=17 of 17 | 12 (23) | 7 (20) | 10 (21) | 0 (0) |
+| Finneas, Ace Archer | WG | 35 | 33 | 2.75 | 12+5=17 of 17 | 13 (23) | 7 (20) | 10 (21) | 0 (0) |
 
 ### The four spreads
 
@@ -27,8 +27,8 @@ Stated as ADR-0010 requires; no threshold on any axis.
 
 | Axis | Values (wick, camellia, alania, finneas) | Min | Max | Spread |
 |---|---|---|---|---|
-| Land count | 36 / 36 / 36 / 36 | 36 | 36 | 0 |
-| Average mana value | 3.14 / 2.78 / 2.97 / 2.77 | 2.77 | 3.14 | 0.37 |
+| Land count | 36 / 36 / 36 / 35 | 35 | 36 | 1 |
+| Average mana value | 3.14 / 2.78 / 2.97 / 2.75 | 2.75 | 3.14 | 0.39 |
 | Creature count | 33 / 33 / 26 / 33 | 26 | 33 | 7 |
 | Targeted interaction | 16 / 15 / 12 / 10 | 10 | 16 | 6 |
 
@@ -168,11 +168,18 @@ holds, and no printing is pinned more times than it is owned. Three Tree Mascot
 is owned three times and sits in Wick, Camellia and Finneas; Alania has none,
 which is the one allocation a future table might revisit.
 
+That enforcement is only as good as the export, which records two Fountainport
+where the owner holds one; Wick and Finneas both listed it. Wick keeps it.
+Finneas runs Rapier Wit in its place, on 35 lands rather than a basic on 36:
+Fountainport made only colourless mana, so the coloured sources are unchanged,
+and the slot keeps a draw effect. The card facts carry two until the count is
+corrected in ManaBox and `refresh` runs.
+
 ## What I would change after the first session
 
 - If Alania's counters decide games: Negate for Griptide (tempo, not denial).
 - If Wick's flyers decide games: Rapacious Dragon for a ground body.
 - If Camellia loses to the air: Plummet is owned twice and Finneas holds one.
-- If Finneas runs out of cards: Fountainport and Heirloom Epic are in; Rapier
-  Wit and Follow the Lumarets are the next draw effects in green-white.
+- If Finneas runs out of cards: Heirloom Epic and Rapier Wit are in; Follow the
+  Lumarets is the next draw effect in green-white.
 - Balance thresholds stay unset until a game has been played (ADR-0010).

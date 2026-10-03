@@ -15,15 +15,15 @@ attack with Finneas every turn so they all grow, and pump the team to finish
 
 Measured shape:
 
-- 100 cards; 36 lands (15 Forest, 16 Plains, plus 5 nonbasic) against a
+- 100 cards; 35 lands (15 Forest, 16 Plains, plus 4 nonbasic) against a
   house window of 35–37.
-- 33 creatures. Average mana value 2.77 (window 2.5–3.2), the lowest at
-  the table. Curve by mana value: 1: 11, 2: 21, 3: 15, 4: 8, 5: 7, 6: 2.
+- 33 creatures. Average mana value 2.75 (window 2.5–3.2), the lowest at
+  the table. Curve by mana value: 1: 11, 2: 22, 3: 15, 4: 8, 5: 7, 6: 2.
 - Rabbit core: 12 creatures with Rabbit on the type line and 5 other
   cards that name Rabbits, 17 in all, out of 17 the collection can
   field in these colours. A tribal core, not a full typal deck. Barkform
   Harvester and Three Tree Mascot are changelings and count as Rabbits in play.
-- Draw 12 (target 10, pool ceiling 23). Ramp 7 (target 10,
+- Draw 13 (target 10, pool ceiling 23). Ramp 7 (target 10,
   ceiling 20). Targeted interaction 10 (target 8, ceiling
   21); the checker's patterns do not catch fight and conditional
   removal, so Longstalk Brawl, Polliwallop, Hunter's Talent, Sonar Strike,
@@ -40,7 +40,10 @@ Measured shape:
    Questcaller or Harvestrite Host.
 3. Attack with Finneas every turn it is safe. Vigilance means he still blocks.
    Each attack grows every Rabbit and every token; when total power reaches
-   ten, you draw. Count before you attack.
+   ten, you draw. Count before you attack. Rapier Wit taps a blocker and
+   draws you a card. Cast it on your own turn, before combat: the stun counter
+   keeps that creature tapped through its next untap step, so it cannot block
+   your next attack either.
 4. Turns four and five: Head of the Homestead, Warren Elder's pump, Innkeeper's
    Talent (at level three every counter is doubled), Banner of Kinship naming
    Rabbit, Heirloom Epic tapping spare tokens for cards.

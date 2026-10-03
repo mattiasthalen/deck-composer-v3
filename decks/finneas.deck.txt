@@ -51,6 +51,7 @@
 1 Stocking the Pantry (BLB) 194
 1 Hunter's Talent (BLB) 179
 1 Feather of Flight (BLB) 13
+1 Rapier Wit (SOS) 28
 1 Pawpatch Formation (BLB) 186
 1 Banishing Light (BLB) 1
 1 Parting Gust (BLB) 24
@@ -70,7 +71,6 @@
 1 Hidden Grotto (BLB) 254
 1 Oakhollow Village (BLB) 258
 1 Lupinflower Village (BLB) 256
-1 Fountainport (BLB) 253
 1 Uncharted Haven (FDN) 564
 16 Plains
 15 Forest

@@ -17,15 +17,15 @@ Goldmane).
 
 Uppmätt form:
 
-- 100 kort; 36 land (15 Forest, 16 Plains, plus 5 icke-basland) mot husets
+- 100 kort; 35 land (15 Forest, 16 Plains, plus 4 icke-basland) mot husets
   fönster på 35–37.
-- 33 varelser. Genomsnittligt manavärde 2.77 (fönster 2.5–3.2), lägst vid
-  bordet. Kurva per manavärde: 1: 11, 2: 21, 3: 15, 4: 8, 5: 7, 6: 2.
+- 33 varelser. Genomsnittligt manavärde 2.75 (fönster 2.5–3.2), lägst vid
+  bordet. Kurva per manavärde: 1: 11, 2: 22, 3: 15, 4: 8, 5: 7, 6: 2.
 - Rabbit-kärna: 12 varelser med Rabbit på typraden och 5 andra kort som
   nämner Kaniner, 17 totalt, av de 17 samlingen kan ställa upp i dessa
   färger. En stamkärna, inte en renodlad stamlek. Barkform Harvester och Three
   Tree Mascot är changelings och räknas som Rabbits i spel.
-- Kortdrag 12 (mål 10, poolens tak 23). Ramp 7 (mål 10,
+- Kortdrag 13 (mål 10, poolens tak 23). Ramp 7 (mål 10,
   tak 20). Riktad interaktion 10 (mål 8, tak
   21); verktygets mönster fångar inte fight och villkorad
   borttagning, så Longstalk Brawl, Polliwallop, Hunter's Talent, Sonar Strike,
@@ -43,7 +43,9 @@ Uppmätt form:
 3. Attackera med Finneas varje varv det är säkert. Vigilance betyder att han
    fortfarande blockerar. Varje attack får varje Rabbit och varje token att
    växa; när den sammanlagda styrkan når tio drar du. Räkna innan du
-   attackerar.
+   attackerar. Rapier Wit tappar en blockerare och du drar ett kort. Spela den
+   på ditt eget varv, före strid: stun-markern håller varelsen tappad genom
+   dess nästa untap-steg, så att den inte heller kan blockera din nästa attack.
 4. Varv fyra och fem: Head of the Homestead, Warren Elders pump, Innkeeper's
    Talent (på nivå tre dubblas varje marker), Banner of Kinship med Rabbit
    valt, Heirloom Epic som tappar lediga tokens för kort.
