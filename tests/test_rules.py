@@ -100,11 +100,11 @@ def test_the_violation_categories_are_empty_over_the_pool(rules) -> None:
         assert [e.card.name for e in owned if in_category(category, e)] == []
 
 
-def test_the_pool_sweepers_are_the_three_known_ones(rules) -> None:
+def test_the_pool_sweepers_are_the_four_known_ones(rules) -> None:
     """By name, not by count: a bare count can agree with an unrelated error.
 
     Every sweeper in this collection is worded as damage to each creature, and
-    all three are red — which is why a white-black deck's sweeper ceiling is
+    all four are red — which is why a white-black deck's sweeper ceiling is
     genuinely zero forever rather than a gap in the pattern.
     """
     facts = read_facts(POOL)
@@ -112,7 +112,12 @@ def test_the_pool_sweepers_are_the_three_known_ones(rules) -> None:
     sweepers = rules.category("sweepers")
     assert sweepers is not None
     found = {e.card.name for e in owned if in_category(sweepers, e)}
-    assert found == {"Brotherhood's End", "Splatter Technique", "Wildfire Howl"}
+    assert found == {
+        "Brotherhood's End",
+        "Glóin the Mighty // Easy Pickings",
+        "Splatter Technique",
+        "Wildfire Howl",
+    }
 
 
 def test_a_type_restricted_wrath_is_not_a_sweeper(rules) -> None:

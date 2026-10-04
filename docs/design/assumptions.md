@@ -92,4 +92,4 @@ pool facts.
 |---|---|
 | Mana rocks in the owned Orzhov nonland pool | 0. Narrower than it looks — ramp is the broader category and white-black holds several. It is still short of a target of 10: 5 distinct names, 11 copies, and singleton makes 5 the ceiling |
 | Ramp effects in the free Simic nonland pool | 6 |
-| Real board sweepers in the whole owned pool | 3 by pattern — Brotherhood's End, Splatter Technique, Wildfire Howl — all red, so the sweeper ceiling in any deck without red is 0. Gen 1's review counted 1 under a stricter reading |
+| Real board sweepers in the whole owned pool | 4 by pattern — Brotherhood's End, Glóin the Mighty // Easy Pickings, Splatter Technique, Wildfire Howl — all red, so the sweeper ceiling in any deck without red is 0. Three until the 2026-10-04 export added Glóin, whose Easy Pickings deals 1 damage to each creature an opponent controls. Gen 1's review counted 1 under a stricter reading |
