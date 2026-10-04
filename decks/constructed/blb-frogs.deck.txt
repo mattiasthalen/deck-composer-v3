@@ -1,0 +1,20 @@
+// schema: 1
+
+// Mainboard
+4 Pond Prophet (BLB) 229
+3 Sunshower Druid (BLB) 195
+1 Mistbreath Elder (BLB) 323
+3 Three Tree Scribe (BLB) 199
+2 Bellowing Crier (BLB) 42
+4 Stickytongue Sentinel (BLB) 193
+2 Waterspout Warden (BLB) 80
+2 Long River Lurker (BLB) 57
+3 Lilysplash Mentor (BLB) 222
+1 Dreamdew Entrancer (BLB) 211
+3 Treeguard Duo (BLB) 200
+2 Skyskipper Duo (BLB) 71
+4 Polliwallop (BLB) 189
+2 Dire Downdraft (BLB) 46
+2 Longstalk Brawl (BLB) 182
+13 Forest
+9 Island

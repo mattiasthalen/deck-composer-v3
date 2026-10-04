@@ -134,6 +134,7 @@ first.
 | `data/categories.json` | bracket category patterns; WotC's data, with the document and date | yes |
 | `data/targets.json` | house metric targets; ours, and on a different authority | yes |
 | `decks/*.deck.txt` | the **deck files**: ManaBox decklists, schema in a comment | yes |
+| `decks/constructed/*.deck.txt` | 60-card decks; same grammar, never read by `check` (ADR-0013) | yes |
 | `tests/fixtures/` | rows cut from the real export, prices blanked; goldens | yes |
 
 Every committed file carries an integer `schema`, fails loudly on an unknown
