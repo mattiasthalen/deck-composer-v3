@@ -179,7 +179,7 @@ A module never parses another module's format.
   ADR-0006. And beware a leading `\xff\xfe` in a test: `json` reads it as a
   UTF-16 byte-order mark and raises the error you already catch.
 - **The maybeboard holds unowned cards** and counts towards nothing.
-- 25 names contain `//`; the export is CRLF; `edhrec_rank` is absent on tokens
+- 32 names contain `//`; the export is CRLF; `edhrec_rank` is absent on tokens
   and seven owned cards.
 
 ## Fixture policy

@@ -172,8 +172,8 @@ That enforcement is only as good as the export, which records two Fountainport
 where the owner holds one; Wick and Finneas both listed it. Wick keeps it.
 Finneas runs Rapier Wit in its place, on 35 lands rather than a basic on 36:
 Fountainport made only colourless mana, so the coloured sources are unchanged,
-and the slot keeps a draw effect. The card facts carry two until the count is
-corrected in ManaBox and `refresh` runs.
+and the slot keeps a draw effect. The count is corrected in the export of
+2026-10-04, and the card facts refreshed from it carry one.
 
 ## What I would change after the first session
 
