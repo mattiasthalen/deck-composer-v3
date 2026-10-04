@@ -16,6 +16,7 @@ Michael Nygard's format. An ADR is superseded, never edited to change its decisi
 | [0010](0010-metrics-are-reported-with-the-context-that-makes-them-legible.md) | Metrics are reported with the context that makes them legible | Accepted (2026-09-20) |
 | [0011](0011-one-card-facts-file-carries-the-projection-and-ownership.md) | One card-facts file carries both the Scryfall projection and ownership | Accepted (2026-09-20) |
 | [0012](0012-the-manabox-decklist-is-the-deck-file.md) | The ManaBox decklist is the deck file | Accepted (2026-09-20) |
+| [0013](0013-constructed-decks-are-stored-under-decks-constructed-and-not-checked.md) | Constructed decks are stored under `decks/constructed/` and are not checked | Accepted (2026-10-04) |
 
 ## Prior art in other repositories
 

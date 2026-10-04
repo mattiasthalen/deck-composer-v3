@@ -14,6 +14,7 @@ For a table named `<table>` with four decks named `<deck>`:
 | Path | What |
 |---|---|
 | `decks/<deck>.deck.txt` | the deck file: a ManaBox decklist, schema in a comment (ADR-0012) |
+| `decks/constructed/<deck>.deck.txt` | a 60-card deck file, same grammar, not checked (ADR-0013) |
 | `decks/<table>.table.json` | the table file: which four decks, the export sha256, the card facts' refresh date (ADR-0007) |
 | `docs/tables/<table>/<deck>.playbook.en.md` | the playbook, English |
 | `docs/tables/<table>/<deck>.playbook.sv.md` | the playbook, Swedish |

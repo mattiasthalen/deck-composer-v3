@@ -1,0 +1,21 @@
+// schema: 1
+
+// Mainboard
+4 Ravine Raider (BLB) 106
+4 Steampath Charger (BLB) 153
+3 Agate-Blade Assassin (BLB) 82
+1 Gev, Scaled Scorch (BLB) 214
+1 Flamecache Gecko (BLB) 135
+4 Cindering Cutthroat (BLB) 208
+4 Kindlespark Duo (BLB) 142
+1 Thought-Stalker Warlock (BLB) 118
+1 Hearthborn Battler (BLB) 139
+1 Valley Flamecaller (BLB) 158
+4 Frilled Sparkshooter (BLB) 136
+2 Glidedive Duo (BLB) 96
+2 Reptilian Recruiter (BLB) 149
+2 Take Out the Trash (BLB) 156
+3 Nocturnal Hunger (BLB) 102
+2 Savor (BLB) 109
+11 Mountain
+10 Swamp
