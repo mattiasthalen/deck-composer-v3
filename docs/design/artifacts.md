@@ -19,6 +19,8 @@ For a table named `<table>` with four decks named `<deck>`:
 | `docs/tables/<table>/<deck>.playbook.en.md` | the playbook, English |
 | `docs/tables/<table>/<deck>.playbook.sv.md` | the playbook, Swedish |
 | `docs/tables/<table>/<table>.review.md` | the one table-level document |
+| `docs/constructed/<deck>.playbook.en.md` | a constructed deck's playbook, English |
+| `docs/constructed/<deck>.playbook.sv.md` | a constructed deck's playbook, Swedish |
 
 Eight playbooks for four decks. **Separate files per language, never one file
 holding both** — it is read at the table, in one language, under time pressure.
@@ -38,6 +40,13 @@ which worked:
 2. **How to pilot it** — concrete numbered lines. What to keep, what the deck
    wants to be doing on each of the first few turns, what the commander is for.
 3. **What to watch** — where the deck is weak, what beats it, what to hold.
+
+A constructed deck's playbook keeps the three sections and both languages, but
+`check` does not read the deck (ADR-0013), so there is no measured shape to
+render. Section 1 explains the words on the cards in its place, no figure
+appears that is not printed on a card, and section 3 is written against the
+deck it was built to play. Nothing re-verifies it against its list. The
+measured shape waits on the design of constructed decks as a checked format.
 
 No team playbook. Gen 1's was archenemy-specific — one parent against three
 children — and nothing in it transfers to a symmetric pod.
