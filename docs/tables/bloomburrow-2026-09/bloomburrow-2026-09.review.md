@@ -21,7 +21,7 @@ House targets for reference: draw 10, ramp 10, targeted interaction 8, sweepers 
 
 | Commander | CI | Lands | Creatures | Avg MV | Tribal core (type+text of ceiling) | Draw (ceiling) | Ramp (ceiling) | Interaction (ceiling) | Sweepers (ceiling) |
 |---|---|---|---|---|---|---|---|---|---|
-| Vren, the Relentless | UB | 36 | 27 | 2.97 | 12+2=14 of 16 | 7 (49) | 3 (8) | 26 (44) | 0 (0) |
+| Vren, the Relentless | UB | 36 | 24 | 2.91 | 10+2=12 of 16 | 8 (49) | 4 (8) | 27 (44) | 0 (0) |
 | Camellia, the Seedmiser | BG | 36 | 33 | 2.78 | 12+3=15 of 15 | 10 (31) | 10 (26) | 15 (38) | 0 (0) |
 | Alania, Divergent Storm | UR | 36 | 26 | 2.97 | 10+7=17 of 18 | 21 (57) | 4 (19) | 12 (35) | 2 (4) |
 | Finneas, Ace Archer | WG | 35 | 33 | 2.75 | 12+5=17 of 17 | 13 (27) | 7 (27) | 10 (23) | 0 (0) |
@@ -33,9 +33,9 @@ Stated as ADR-0010 requires; no threshold on any axis.
 | Axis | Values (alania, camellia, finneas, vren) | Min | Max | Spread |
 |---|---|---|---|---|
 | Land count | 36 / 36 / 35 / 36 | 35 | 36 | 1 |
-| Average mana value | 2.97 / 2.78 / 2.75 / 2.97 | 2.75 | 2.97 | 0.22 |
-| Creature count | 26 / 33 / 33 / 27 | 26 | 33 | 7 |
-| Targeted interaction | 12 / 15 / 10 / 26 | 10 | 26 | 16 |
+| Average mana value | 2.97 / 2.78 / 2.75 / 2.91 | 2.75 | 2.97 | 0.22 |
+| Creature count | 26 / 33 / 33 / 24 | 24 | 33 | 9 |
+| Targeted interaction | 12 / 15 / 10 / 27 | 10 | 27 | 17 |
 
 ### The basic budget, estimate against measurement (ADR-0005)
 
@@ -60,8 +60,8 @@ on 15 Swamp against Wick's 11; dropping red freed seven Mountains.
 
 Not clustered on one deck, but not even either.
 
-- **Vren** flies with Moonstone Harbinger, Glidedive Duo, Darkstar Augur,
-  Starlit Soothsayer, Starscape Cleric, Deep-Cavern Bat, Spectral Sailor,
+- **Vren** flies with Moonstone Harbinger, Glidedive Duo, Starlit Soothsayer,
+  Starscape Cleric, Deep-Cavern Bat, Spectral Sailor,
   Plumecreed Escort and Maha, Its Feathers Night. Its unblockable or
   near-unblockable Rats are Shoreline Looter, Nightwhorl Hermit (at threshold)
   and Azure Beastbinder, with menace on Tidecaller Mentor and Thought-Stalker
@@ -98,9 +98,8 @@ seat does.
 
 Stack interaction is a colour fact: only Vren and Alania are blue. Alania holds
 Negate, Essence Scatter, Dazzling Denial and Spellgyre. Vren holds Essence
-Scatter, Long River's Pull, Cancel, Devious Cover-Up, Spellgyre and Dazzling
-Denial. Camellia and Finneas have none. With Wick, this was one blue deck
-holding counters; now it is two, and the counters split evenly between them.
+Scatter, Long River's Pull, Cancel, Devious Cover-Up and Spellgyre. Camellia and Finneas have none. With Wick, this was one blue deck
+holding counters; now it is two, and Vren holds one more.
 The two sweepers (Brotherhood's End, Splatter Technique) stay in Alania; every
 sweeper the collection owns is red, so Vren's sweeper ceiling is zero.
 
@@ -137,7 +136,7 @@ you would give.
 
 Finneas is on the table on turn two, Camellia on three, Vren on four, Alania on
 five. The average mana values in the spread table put Finneas and Camellia
-lightest and Vren and Alania joint heaviest.
+lightest and Alania heaviest, with Vren just under her.
 Expect Finneas and Camellia to apply the early pressure and Vren and Alania to
 take over later: Vren by grinding the board down into Rats, Alania once her
 engine is online. Alania still has to survive to five mana with the fewest

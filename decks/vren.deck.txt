@@ -8,11 +8,11 @@
 1 Mind Drill Assailant (BLB) 225
 1 Azure Beastbinder (BLB) 302
 1 Shoreline Looter (BLB) 70
-1 Thought Shucker (BLB) 77
+1 Fountainport Bell (BLB) 245
 1 Mindwhisker (BLB) 60
 1 Nightwhorl Hermit (BLB) 62
 1 Persistent Marshstalker (BLB) 104
-1 Thornplate Intimidator (BLB) 117
+1 Pin to the Earth (JOU) 45
 1 Wick's Patrol (BLB) 121
 1 Daggerfang Duo (BLB) 89
 1 Lightshell Duo (FDN) 157
@@ -21,7 +21,7 @@
 1 Maha, Its Feathers Night (BLB) 100
 1 Moonstone Harbinger (BLB) 101
 1 Glidedive Duo (BLB) 96
-1 Darkstar Augur (BLB) 311
+1 Into the Roil (FDN) 509
 1 Downwind Ambusher (BLB) 92
 1 Starscape Cleric (BLB) 116
 1 Plumecreed Escort (BLB) 65
@@ -43,7 +43,7 @@
 1 Into the Flood Maw (BLB) 52
 1 Starlight Snare (FDN) 514
 1 Dire Downdraft (BLB) 46
-1 Dazzling Denial (BLB) 45
+1 Bumbleflower's Sharepot (BLB) 244
 1 Long River's Pull (BLB) 58
 1 Spellgyre (BLB) 72
 1 Hero's Downfall (FDN) 175
