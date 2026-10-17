@@ -24,10 +24,10 @@ Measured shape:
   cards that name Otters, 17 in all, out of 18 the collection can
   field in these colours. A tribal core, not a full typal deck. Barkform
   Harvester is a changeling and counts as an Otter in play.
-- Draw 21 (target 10, pool ceiling 51), the most at the table.
-  Targeted interaction 12 (target 8, ceiling 31).
-  Sweepers 2 (target 2, ceiling 3): the table's board wipes
-  live here. Ramp 4 (target 10, ceiling 12): Resonating Lute,
+- Draw 21 (target 10, pool ceiling 57), the most at the table.
+  Targeted interaction 12 (target 8, ceiling 35).
+  Sweepers 2 (target 2, ceiling 4): the table's board wipes
+  live here. Ramp 4 (target 10, ceiling 19): Resonating Lute,
   Abstract Paintmage and Hydro-Channeler make spell mana the checker counts;
   Treasures from Blooming Blast it does not.
 - Coloured land sources: U 21, R 18.

@@ -4,13 +4,12 @@
   "bracket": 2,
   "decks": [
     {
-      "deck": "wick",
-      "path": "decks/wick.deck.txt",
-      "commander": "Wick, the Whorled Mind",
+      "deck": "vren",
+      "path": "decks/vren.deck.txt",
+      "commander": "Vren, the Relentless",
       "color_identity": [
         "U",
-        "B",
-        "R"
+        "B"
       ]
     },
     {
@@ -41,8 +40,8 @@
       ]
     }
   ],
-  "export_sha256": "sha256:463504c90131fd7f4208eb434fc6b0ac4ff6d8e74ce9fb7e3d712a5190a82a1c",
-  "card_facts_refreshed": "2026-09-20",
+  "export_sha256": "sha256:c0d0c4a373549035252081aea7f40ef730b5d3e6e3609fc38ecbc3fff486ed5c",
+  "card_facts_refreshed": "2026-10-04",
   "rules_version": "2026-09-20",
   "rules_hash": "sha256:2de25d1be64d5fabf70085b84d3432c4fa9dffd65cd5513d89aa96a35f264dae",
   "targets_version": "2026-09-20"

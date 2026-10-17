@@ -23,9 +23,9 @@ Measured shape:
   cards that name Rabbits, 17 in all, out of 17 the collection can
   field in these colours. A tribal core, not a full typal deck. Barkform
   Harvester and Three Tree Mascot are changelings and count as Rabbits in play.
-- Draw 13 (target 10, pool ceiling 23). Ramp 7 (target 10,
-  ceiling 20). Targeted interaction 10 (target 8, ceiling
-  21); the checker's patterns do not catch fight and conditional
+- Draw 13 (target 10, pool ceiling 27). Ramp 7 (target 10,
+  ceiling 27). Targeted interaction 10 (target 8, ceiling
+  23); the checker's patterns do not catch fight and conditional
   removal, so Longstalk Brawl, Polliwallop, Hunter's Talent, Sonar Strike,
   Parting Gust and Prayer of Binding are answers on top of that count.
   Sweepers 0 (target 2, ceiling 0): green-white has none in
@@ -64,7 +64,7 @@ Measured shape:
   keep Hop to It or Head of the Homestead in hand to rebuild, and hold Dawn's
   Truce when she has three mana open.
 - Menace Squirrels need two blockers each. You have the bodies; block in pairs.
-- Wick's Maha, Its Feathers Night sets your tokens' toughness to one. Answer
+- Vren's Maha, Its Feathers Night sets your tokens' toughness to one. Answer
   it immediately: Banishing Light, Parting Gust, Angelic Edict, Repel Calamity.
 - Parting Gust without the gift returns the creature at end of turn with a
   counter. Promise the gift (the opponent gets a tapped 1/1 Fish) when you
