@@ -25,9 +25,9 @@ Measured shape:
   field in these colours. A tribal core, not a full typal deck. Barkform
   Harvester and Three Tree Mascot are changelings and count as Squirrels in
   play, though the checker does not count them in the core.
-- Draw 10 (target 10, pool ceiling 24). Ramp 10 (target 10,
-  ceiling 19). Targeted interaction 15 (target 8, ceiling
-  36). Sweepers 0 (target 2, ceiling 0): the
+- Draw 10 (target 10, pool ceiling 31). Ramp 10 (target 10,
+  ceiling 26). Targeted interaction 15 (target 8, ceiling
+  38). Sweepers 0 (target 2, ceiling 0): the
   collection's board wipes are all red, so black-green cannot have one.
 - Coloured land sources: B 19, G 20.
 
@@ -52,7 +52,7 @@ Measured shape:
    Nocturnal Hunger, Bitter Triumph, Consumed by Greed and Early Winter for
    creatures; Pawpatch Formation, Glorious Decay and Plummet-style effects for
    flyers; Scrapshooter, Reclamation Sage, Hivespine Wolverine and Witherbloom
-   Charm for artifacts and enchantments. Wick's Snail and Alania's engine
+   Charm for artifacts and enchantments. Vren and Alania's engine
    creatures are the best targets.
 7. Get value back: Bonebind Orator and Curious Forager return cards, Osteomancer
    Adept lets you cast creatures from the graveyard by foraging, Zombify and
@@ -67,7 +67,7 @@ Measured shape:
 - Camellia is a three-mana commander with no built-in protection and she dies
   often. Recast her; Overprotect saves her once.
 - Almost no flyers (Glidedive Duo is the one) and no board wipe. Finneas's and
-  Wick's flyers get through: keep one flyer answer in hand.
+  Vren's flyers get through: keep one flyer answer in hand.
 - Life is a resource here. Diresight, Bonecache Overseer, Stargaze and
   Nocturnal Hunger (without the gift) cost life; Food, Pest Mascot and
   Shopkeeper's Bane give it back.

@@ -1,9 +1,14 @@
 # Table review — bloomburrow-2026-09
 
-The one table-level document (ADR-0010). Commanders: Wick, the Whorled Mind, Camellia, the Seedmiser, Alania, Divergent Storm, Finneas, Ace Archer. Bracket 2.
+The one table-level document (ADR-0010). Commanders: Vren, the Relentless, Camellia, the Seedmiser, Alania, Divergent Storm, Finneas, Ace Archer. Bracket 2.
+
+Vren replaced Wick, the Whorled Mind on 2026-10-17 at the owner's request. The
+owner chose the commander (ADR-0008); the seat was rebuilt from the pool, with
+most of Wick's blue and black cards moving across. Camellia, Alania and Finneas
+are unchanged.
 
 `check` over the four deck files: `passed` True, `table.passed` True, no
-violations. Snapshot: export `sha256:463504c90131fd7f4208eb434fc6b0ac4ff6d8e74ce9fb7e3d712a5190a82a1c`, card facts refreshed 2026-09-20,
+violations. Snapshot: export `sha256:c0d0c4a373549035252081aea7f40ef730b5d3e6e3609fc38ecbc3fff486ed5c`, card facts refreshed 2026-10-04,
 bracket rules 2026-09-20 (`sha256:2de25d1be64d5fabf70085b84d3432c4fa9dffd65cd5513d89aa96a35f264dae`), house targets 2026-09-20.
 Every number in this document and in the eight playbooks is that run's output,
 rendered into the prose, never retyped. The judged findings below name cards
@@ -16,21 +21,21 @@ House targets for reference: draw 10, ramp 10, targeted interaction 8, sweepers 
 
 | Commander | CI | Lands | Creatures | Avg MV | Tribal core (type+text of ceiling) | Draw (ceiling) | Ramp (ceiling) | Interaction (ceiling) | Sweepers (ceiling) |
 |---|---|---|---|---|---|---|---|---|---|
-| Wick, the Whorled Mind | UBR | 36 | 33 | 3.14 | 13+4=17 of 17 | 15 (62) | 3 (13) | 16 (51) | 0 (3) |
-| Camellia, the Seedmiser | BG | 36 | 33 | 2.78 | 12+3=15 of 15 | 10 (24) | 10 (19) | 15 (36) | 0 (0) |
-| Alania, Divergent Storm | UR | 36 | 26 | 2.97 | 10+7=17 of 18 | 21 (51) | 4 (12) | 12 (31) | 2 (3) |
-| Finneas, Ace Archer | WG | 35 | 33 | 2.75 | 12+5=17 of 17 | 13 (23) | 7 (20) | 10 (21) | 0 (0) |
+| Vren, the Relentless | UB | 36 | 24 | 2.91 | 10+2=12 of 16 | 8 (49) | 4 (8) | 27 (44) | 0 (0) |
+| Camellia, the Seedmiser | BG | 36 | 33 | 2.78 | 12+3=15 of 15 | 10 (31) | 10 (26) | 15 (38) | 0 (0) |
+| Alania, Divergent Storm | UR | 36 | 26 | 2.97 | 10+7=17 of 18 | 21 (57) | 4 (19) | 12 (35) | 2 (4) |
+| Finneas, Ace Archer | WG | 35 | 33 | 2.75 | 12+5=17 of 17 | 13 (27) | 7 (27) | 10 (23) | 0 (0) |
 
 ### The four spreads
 
 Stated as ADR-0010 requires; no threshold on any axis.
 
-| Axis | Values (wick, camellia, alania, finneas) | Min | Max | Spread |
+| Axis | Values (alania, camellia, finneas, vren) | Min | Max | Spread |
 |---|---|---|---|---|
-| Land count | 36 / 36 / 36 / 35 | 35 | 36 | 1 |
-| Average mana value | 3.14 / 2.78 / 2.97 / 2.75 | 2.75 | 3.14 | 0.39 |
-| Creature count | 33 / 33 / 26 / 33 | 26 | 33 | 7 |
-| Targeted interaction | 16 / 15 / 12 / 10 | 10 | 16 | 6 |
+| Land count | 36 / 36 / 35 / 36 | 35 | 36 | 1 |
+| Average mana value | 2.97 / 2.78 / 2.75 / 2.91 | 2.75 | 2.97 | 0.22 |
+| Creature count | 26 / 33 / 33 / 24 | 24 | 33 | 9 |
+| Targeted interaction | 12 / 15 / 10 / 27 | 10 | 27 | 17 |
 
 ### The basic budget, estimate against measurement (ADR-0005)
 
@@ -40,19 +45,14 @@ generous for: none.
 | Basic | Owned | Used | Estimated | Divergence | Remaining |
 |---|---|---|---|---|---|
 | Forest | 54 | 31 | 35 | -4 | 23 |
-| Island | 49 | 28 | 29 | -1 | 21 |
-| Mountain | 42 | 21 | 29 | -8 | 21 |
+| Island | 50 | 32 | 35 | -3 | 18 |
+| Mountain | 42 | 14 | 18 | -4 | 28 |
 | Plains | 40 | 16 | 18 | -2 | 24 |
-| Swamp | 38 | 26 | 29 | -3 | 12 |
+| Swamp | 39 | 30 | 35 | -5 | 9 |
 
-Verdict: the commander set was chosen at the checkpoint on Swamp headroom under
-an even-split estimate, and the risk recorded as A7 — that Wick would come out
-black-primary and squeeze the second black seat — did not materialise. Wick's
-Rat core in this collection is blue-heavy (Shoreline Looter, Thought Shucker,
-Azure Beastbinder, Mindwhisker, Nightwhorl Hermit, Lightshell Duo) so the list
-sits between blue and black, and every divergence in the table above is zero
-or negative. The build order named by `check` was followed: Wick, then
-Camellia, then Alania, then Finneas.
+Verdict: every divergence is negative, so the estimate stayed on the safe side.
+Swamp is still the tightest basic, now with 9 spare. Vren is a two-colour seat
+on 15 Swamp against Wick's 11; dropping red freed seven Mountains.
 
 ## The judged half
 
@@ -60,12 +60,12 @@ Camellia, then Alania, then Finneas.
 
 Not clustered on one deck, but not even either.
 
-- **Wick** has the most ways past blockers: flyers Skyskipper Duo, Darkstar
-  Augur, Maha, Its Feathers Night, Rapacious Dragon, Glidedive Duo, Bloodtithe
-  Collector and Crow of Dark Tidings; unblockable or near-unblockable Rats in
-  Shoreline Looter, Nightwhorl Hermit (at threshold), Azure Beastbinder, plus
-  Long River Lurker and Gossip's Talent granting it; menace on Tidecaller
-  Mentor and Thought-Stalker Warlock.
+- **Vren** flies with Moonstone Harbinger, Glidedive Duo, Starlit Soothsayer,
+  Starscape Cleric, Deep-Cavern Bat, Spectral Sailor,
+  Plumecreed Escort and Maha, Its Feathers Night. Its unblockable or
+  near-unblockable Rats are Shoreline Looter, Nightwhorl Hermit (at threshold)
+  and Azure Beastbinder, with menace on Tidecaller Mentor and Thought-Stalker
+  Warlock.
 - **Camellia**'s evasion is one keyword on the whole team: menace from the
   commander, plus trample on Honored Dreyleader, Galewind Moose, Pest Mascot
   and Shopkeeper's Bane. Her only flyer is Glidedive Duo.
@@ -78,37 +78,38 @@ Not clustered on one deck, but not even either.
 Reach to hold the air: Finneas himself, Scrapshooter, Barkform Harvester and
 Clifftop Lookout in Finneas; Scrapshooter, Barkform Harvester, Treetop
 Sentries, Fecund Greenshell, Galewind Moose and Hivespine Wolverine's fight in
-Camellia; Barkform Harvester in Wick and Alania. Camellia is the seat most
+Camellia; Barkform Harvester in Vren and Alania. Camellia is the seat most
 exposed to flyers and holds Pawpatch Formation and Glorious Decay against
-them. If Wick's air force decides too many games, the first swap is Rapacious
-Dragon for a ground Rat-adjacent body; the flyers that matter to Wick's plan
-are Darkstar Augur and Maha.
+them. Vren's flyers are mostly small; the one that decides games is Maha.
 
 ### Interaction asymmetry
 
-The counted spread above overstates the gap and understates one deck. The
-checker counts pattern matches over oracle text (ADR-0009), and it misses fight
-and conditional removal: Finneas's Longstalk Brawl, Polliwallop, Hunter's
-Talent, Sonar Strike, Parting Gust and Prayer of Binding are real answers it
-does not count, while Camellia's count includes artifact and enchantment
-removal (Scrapshooter, Reclamation Sage, Hivespine Wolverine, Bumbleflower's
-Sharepot, Witherbloom Charm). Read the four counts as "creature and permanent
-removal the pattern recognises", not as total interaction.
+The counted spread grew with this change, and it is real. Vren is a removal
+deck: its commander turns every creature it kills into a Rat, so the seat was
+built to hold the most answers at the table. The checker counts pattern matches
+over oracle text (ADR-0009) and misses fight and conditional removal:
+Finneas's Longstalk Brawl, Polliwallop, Hunter's Talent, Sonar Strike, Parting
+Gust and Prayer of Binding are real answers it does not count, while Camellia's
+count includes artifact and enchantment removal (Scrapshooter, Reclamation
+Sage, Hivespine Wolverine, Bumbleflower's Sharepot, Witherbloom Charm). Read
+the four counts as "creature and permanent removal the pattern recognises",
+not as total interaction. Even so, Vren holds roughly twice what any other
+seat does.
 
-Stack interaction is where the real asymmetry is, and it is a colour fact:
-only Wick and Alania are blue. Alania holds Negate, Essence Scatter, Dazzling
-Denial and Spellgyre; Wick holds one Dazzling Denial; Camellia and Finneas have
-none. This is the shape gen 1's review flagged, at half the size. It was left
-in because Alania is the deck whose plan is spells, and because the two
-sweepers (Brotherhood's End, Splatter Technique) also had to live there — all
-three sweepers the collection owns are red, and Wick's small-creature board
-does not want them. Wildfire Howl, the third, was left out of every deck on
-purpose: it kills Alania's own Otters and Wick's Rats.
+Stack interaction is a colour fact: only Vren and Alania are blue. Alania holds
+Negate, Essence Scatter, Dazzling Denial and Spellgyre. Vren holds Essence
+Scatter, Long River's Pull, Cancel, Devious Cover-Up and Spellgyre. Camellia and Finneas have none. With Wick, this was one blue deck
+holding counters; now it is two, and Vren holds one more.
+The two sweepers (Brotherhood's End, Splatter Technique) stay in Alania; every
+sweeper the collection owns is red, so Vren's sweeper ceiling is zero.
 
-Verdict: acceptable for a symmetric pod where the pilot of Alania is the owner
-(see piloting load). If the counters feel oppressive to the cold pilots, the
-first change is Negate out of Alania for a fourth bounce spell (Griptide is
-owned), which keeps her answers but makes them tempo rather than denial.
+Verdict: Vren is the seat most likely to feel oppressive to cold pilots,
+because it answers nearly everything one card at a time and gets a body for
+each answer. That was the owner's intent: the deck was built to beat a
+ramp-into-huge-creatures opponent outside this table. If it dominates the pod,
+the first change is to cut counters (Cancel, Devious Cover-Up) for Rat bodies.
+Alania's counters are unchanged; Negate out for Griptide is still the first
+swap if hers dominate.
 
 ### Piloting load
 
@@ -120,8 +121,9 @@ Ordered from easiest to hardest, for the three friends who pick a deck up cold
    whether to promise the gift on Parting Gust.
 2. **Camellia** — one recurring decision: forage by exiling three or by
    sacrificing a Food, and when. Removal choices are plentiful but forgiving.
-3. **Wick** — three colours, a graveyard threshold to track, a Snail to time,
-   and hand-attack targeting. Medium-hard; the playbook carries it.
+3. **Vren** — two colours and a simple engine, but most turns ask whether to
+   hold mana for a counter or spend it on removal, and which answer fits which
+   threat. Medium; the playbook carries it.
 4. **Alania** — the copy trigger is optional per spell and asks who should
    draw; counters need holding; a copy is not a cast. Recommended for the
    owner, or for the most experienced guest.
@@ -132,31 +134,28 @@ you would give.
 
 ### Speed and shape
 
-Finneas is on the table on turn two, Camellia on three, Wick on four, Alania on
+Finneas is on the table on turn two, Camellia on three, Vren on four, Alania on
 five. The average mana values in the spread table put Finneas and Camellia
-lightest and Wick heaviest; Alania sits between them, lighter than Wick despite
-the five-mana commander.
-Expect Finneas and Camellia to apply the early pressure and Wick and Alania to
-take over once their engines are online. Alania in particular has to survive to
-five mana with the fewest creatures at the table; her bounce spells and the two
-sweepers are what buy that time, and the cold pilots should expect her to be
-the target early if she draws well.
+lightest and Alania heaviest, with Vren just under her.
+Expect Finneas and Camellia to apply the early pressure and Vren and Alania to
+take over later: Vren by grinding the board down into Rats, Alania once her
+engine is online. Alania still has to survive to five mana with the fewest
+creatures at the table; her bounce spells and the two sweepers buy that time.
 
 ### Ramp
 
-Wick and Alania report ramp far under the house target, and only part of that is
-the collection's ceiling. The ramp pattern strips reminder text (ADR-0009), so a
-card that makes a Treasure token is not counted: Rapacious Dragon, Corsair
-Captain, Seize the Spoils and Fountainport in Wick, Blooming Blast in Alania.
-Both lists are on 36 lands with mana rocks and creatures the checker does
-see. Not a change; a note for the reader of the counts.
+Vren and Alania report ramp far under the house target, and much of that is
+the collection's ceiling: blue-black can field 8. The ramp pattern strips
+reminder text (ADR-0009), so a card that makes a Treasure token is not counted
+— Blooming Blast in Alania. Both lists are on 36 lands. Not a change; a note
+for the reader of the counts.
 
 ### Bracket and combos
 
 Vampiric Tutor, the one Game Changer owned, is in no deck. The checker found no
 extra-turn card and no mass land denial. A8 (two-card infinite combos absent) is
-judgment, not a check: I read the four lists for loops and found none. Wick's
-engine is one Snail per sacrifice, Alania's copies are capped at three a turn,
+judgment, not a check: I read the four lists for loops and found none. Vren's
+Rats come one per creature exiled, Alania's copies are capped at three a turn,
 Camellia's Squirrel tokens need a Food each, and Finneas's counters are once per
 attack.
 
@@ -165,20 +164,18 @@ attack.
 The four decks are disjoint in physical cards, which `check` enforces by name
 against the export; every pinned printing in the deck files is one the export
 holds, and no printing is pinned more times than it is owned. Three Tree Mascot
-is owned three times and sits in Wick, Camellia and Finneas; Alania has none,
-which is the one allocation a future table might revisit.
+is owned three times and sits in Vren, Camellia and Finneas; Alania has none.
+Five cards Wick had and Vren wanted are single copies already in Camellia or
+Alania (Bitter Triumph, Consumed by Greed, Curse of the Swine, Huskburster
+Swarm, Osteomancer Adept); they stayed where they were.
 
-That enforcement is only as good as the export, which records two Fountainport
-where the owner holds one; Wick and Finneas both listed it. Wick keeps it.
-Finneas runs Rapier Wit in its place, on 35 lands rather than a basic on 36:
-Fountainport made only colourless mana, so the coloured sources are unchanged,
-and the slot keeps a draw effect. The count is corrected in the export of
-2026-10-04, and the card facts refreshed from it carry one.
+Fountainport is in Vren. The export of 2026-10-04 records one, and Finneas
+still runs Rapier Wit in the slot it once held.
 
 ## What I would change after the first session
 
+- If Vren's answers decide games: Cancel and Devious Cover-Up out for Rats.
 - If Alania's counters decide games: Negate for Griptide (tempo, not denial).
-- If Wick's flyers decide games: Rapacious Dragon for a ground body.
 - If Camellia loses to the air: Plummet is owned twice and Finneas holds one.
 - If Finneas runs out of cards: Heirloom Epic and Rapier Wit are in; Follow the
   Lumarets is the next draw effect in green-white.

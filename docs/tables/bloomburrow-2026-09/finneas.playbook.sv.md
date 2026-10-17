@@ -25,9 +25,9 @@ Uppmätt form:
   nämner Kaniner, 17 totalt, av de 17 samlingen kan ställa upp i dessa
   färger. En stamkärna, inte en renodlad stamlek. Barkform Harvester och Three
   Tree Mascot är changelings och räknas som Rabbits i spel.
-- Kortdrag 13 (mål 10, poolens tak 23). Ramp 7 (mål 10,
-  tak 20). Riktad interaktion 10 (mål 8, tak
-  21); verktygets mönster fångar inte fight och villkorad
+- Kortdrag 13 (mål 10, poolens tak 27). Ramp 7 (mål 10,
+  tak 27). Riktad interaktion 10 (mål 8, tak
+  23); verktygets mönster fångar inte fight och villkorad
   borttagning, så Longstalk Brawl, Polliwallop, Hunter's Talent, Sonar Strike,
   Parting Gust och Prayer of Binding är svar utöver den siffran. Svepare
   0 (mål 2, tak 0): grön-vitt har ingen i den här
@@ -68,7 +68,7 @@ Uppmätt form:
   och håll Dawn's Truce när hon har tre mana öppet.
 - Ekorrar med menace kräver två blockerare var. Du har kropparna; blockera i
   par.
-- Wicks Maha, Its Feathers Night sätter dina tokens tålighet till ett. Svara
+- Vrens Maha, Its Feathers Night sätter dina tokens tålighet till ett. Svara
   omedelbart: Banishing Light, Parting Gust, Angelic Edict, Repel Calamity.
 - Parting Gust utan gift returnerar varelsen i slutet av varvet med en marker.
   Lova giften (motståndaren får en tappad 1/1 Fish) när du vill ha den borta.

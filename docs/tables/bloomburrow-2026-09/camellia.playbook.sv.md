@@ -26,9 +26,9 @@ Uppmätt form:
   färger. En stamkärna, inte en renodlad stamlek. Barkform Harvester och Three
   Tree Mascot är changelings och räknas som Squirrels i spel, även om verktyget
   inte räknar dem i kärnan.
-- Kortdrag 10 (mål 10, poolens tak 24). Ramp 10 (mål 10,
-  tak 19). Riktad interaktion 15 (mål 8, tak
-  36). Svepare 0 (mål 2, tak 0): samlingens
+- Kortdrag 10 (mål 10, poolens tak 31). Ramp 10 (mål 10,
+  tak 26). Riktad interaktion 15 (mål 8, tak
+  38). Svepare 0 (mål 2, tak 0): samlingens
   bordsvepare är alla röda, så svart-grönt kan inte ha någon.
 - Färgade landkällor: B 19, G 20.
 
@@ -54,7 +54,7 @@ Uppmätt form:
    Cycle, Fell, Nocturnal Hunger, Bitter Triumph, Consumed by Greed och Early
    Winter mot varelser; Pawpatch Formation och Glorious Decay mot flygare;
    Scrapshooter, Reclamation Sage, Hivespine Wolverine och Witherbloom Charm
-   mot artefakter och förtrollningar. Wicks Snail och Alanias motorvarelser
+   mot artefakter och förtrollningar. Vren och Alanias motorvarelser
    är de bästa målen.
 7. Ta tillbaka värde: Bonebind Orator och Curious Forager returnerar kort,
    Osteomancer Adept låter dig spela varelser från kyrkogården genom att
@@ -70,7 +70,7 @@ Uppmätt form:
 - Camellia är en commander för tre mana utan inbyggt skydd och hon dör ofta.
   Spela henne igen; Overprotect räddar henne en gång.
 - Nästan inga flygare (Glidedive Duo är den enda) och ingen bordsvepare.
-  Finneas och Wicks flygare kommer igenom: håll ett svar mot flygare på handen.
+  Finneas och Vrens flygare kommer igenom: håll ett svar mot flygare på handen.
 - Liv är en resurs här. Diresight, Bonecache Overseer, Stargaze och Nocturnal
   Hunger (utan gift) kostar liv; Food, Pest Mascot och Shopkeeper's Bane ger
   det tillbaka.

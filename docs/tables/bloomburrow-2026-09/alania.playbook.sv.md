@@ -25,10 +25,10 @@ Uppmätt form:
   nämner Uttrar, 17 totalt, av de 18 samlingen kan ställa upp i dessa
   färger. En stamkärna, inte en renodlad stamlek. Barkform Harvester är en
   changeling och räknas som Otter i spel.
-- Kortdrag 21 (mål 10, poolens tak 51), mest vid bordet. Riktad
-  interaktion 12 (mål 8, tak 31). Svepare 2
-  (mål 2, tak 3): bordets bordsvepare finns här. Ramp 4
-  (mål 10, tak 12): Resonating Lute, Abstract Paintmage och
+- Kortdrag 21 (mål 10, poolens tak 57), mest vid bordet. Riktad
+  interaktion 12 (mål 8, tak 35). Svepare 2
+  (mål 2, tak 4): bordets bordsvepare finns här. Ramp 4
+  (mål 10, tak 19): Resonating Lute, Abstract Paintmage och
   Hydro-Channeler gör besvärjelsemana som verktyget räknar; Treasures från
   Blooming Blast räknar det inte.
 - Färgade landkällor: U 21, R 18.
